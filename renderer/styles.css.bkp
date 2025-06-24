@@ -1,0 +1,551 @@
+/* renderer/styles.css */
+
+/* Basic Body and Font Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    background-color: #f8f8f8; /* A very light grey background */
+    margin: 0;
+    padding: 20px; /* Some universal padding */
+    display: flex;
+    flex-direction: column; /* For vertical stacking */
+    align-items: center; /* Center content horizontally */
+    min-height: 100vh; /* Ensure it takes full height */
+    box-sizing: border-box; /* Include padding in total dimensions */
+}
+
+/* Main headings */
+h1 {
+    font-size: 2em; /* Twice the base font size */
+    color: #333;
+    margin-bottom: 25px; /* Space below heading */
+    text-align: center;
+}
+/* New for section titles inside the form */
+.section-title {
+    font-size: 1.5em; /* Slightly smaller than h1, larger than labels */
+    color: #444;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+}
+
+
+/* Form container for general layout */
+.form-container {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: 500px; /* Limit form width for readability */
+    margin-bottom: 30px; /* Space below the form */
+    box-sizing: border-box;
+}
+
+/* Labels for form fields */
+form label {
+    display: block; /* Each label on its own line */
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #555;
+    margin-top: 15px; /* Space between form groups */
+}
+
+/* Common input and select styles */
+form input[type="text"],
+form input[type="number"],
+form select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1em;
+    box-sizing: border-box; /* Ensures padding doesn't increase width */
+    transition: border-color 0.2s ease;
+}
+
+form input[type="text"]:focus,
+form input[type="number"]:focus,
+form select:focus {
+    outline: none;
+    border-color: #007bff; /* Blue border on focus */
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* Subtle glow */
+}
+
+/* Radio buttons - Custom styling for better look than default browser ones */
+.radio-group {
+    display: flex;
+    gap: 20px; /* Space between radio options */
+    margin-top: 8px;
+    margin-bottom: 15px;
+}
+
+.radio-group label {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: normal; /* Override bold from generic label rule */
+    margin-top: 0; /* Override margin-top from generic label rule */
+}
+
+.radio-group input[type="radio"] {
+    appearance: none; /* Hide default radio button */
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #999;
+    border-radius: 50%;
+    background-color: #fff;
+    margin-right: 8px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.radio-group input[type="radio"]:checked {
+    border-color: #007bff; /* Blue border when checked */
+    background-color: #007bff; /* Fill with blue when checked */
+    box-shadow: inset 0 0 0 4px #fff; /* Inner white circle */
+}
+
+.radio-group input[type="radio"]:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.4);
+}
+
+/* Form Actions Container for main Save/Cancel buttons */
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+/* Primary/Secondary Buttons */
+.action-button-primary,
+.action-button-secondary {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    min-width: 120px;
+}
+
+.action-button-primary {
+    background-color: #007bff;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0, 123, 255, 0.2);
+}
+
+.action-button-primary:hover {
+    background-color: #0056b3;
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.action-button-secondary {
+    background-color: #6c757d;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.action-button-secondary:hover {
+    background-color: #5a6268;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Styles for Add New Lookup Item UI */
+.field-with-add-button {
+    display: flex;
+    align-items: center; /* Vertically align select and button */
+    gap: 10px; /* Space between select and button */
+    margin-bottom: 10px; /* Space below this row */
+}
+
+.field-with-add-button select {
+    flex-grow: 1; /* Allow select to take available space */
+    margin-bottom: 0; /* Override default label/input margin */
+}
+
+/* Styles for Add/Edit/Cancel buttons in field-with-add-button and input containers */
+.add-new-btn,
+.edit-item-btn, /* NEW: for the 'Edit Name' button */
+.new-item-save-btn,
+.new-item-cancel-btn,
+.edit-item-save-btn, /* NEW: for the 'Save' button in edit mode */
+.edit-item-cancel-btn { /* NEW: for the 'X' button in edit mode */
+    padding: 8px 12px;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em; /* Adjusted to be more consistent */
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    flex-shrink: 0; /* Prevent buttons from shrinking too much */
+}
+
+/* Specific colors for action buttons */
+.add-new-btn {
+    background-color: #28a745; /* Green for add */
+}
+.add-new-btn:hover {
+    background-color: #218838;
+}
+
+.edit-item-btn { /* NEW: Style for the 'Edit Name' button */
+    background-color: #007bff; /* Blue for edit */
+    font-size: 0.9em; /* Smaller font for inline edit */
+    padding: 8px 10px; /* Smaller padding */
+}
+.edit-item-btn:hover {
+    background-color: #0056b3;
+}
+
+.new-item-save-btn, .edit-item-save-btn {
+    background-color: #007bff; /* Blue */
+}
+.new-item-save-btn:hover, .edit-item-save-btn:hover {
+    background-color: #0056b3;
+}
+
+.new-item-cancel-btn, .edit-item-cancel-btn {
+    background-color: #dc3545; /* Red */
+}
+.new-item-cancel-btn:hover, .edit-item-cancel-btn:hover {
+    background-color: #c82333;
+}
+
+/* Containers for new item input and edit item input */
+.new-item-input-container,
+.edit-item-input-container { /* NEW: Shared style for edit container */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    border: 1px dashed #ccc;
+}
+
+.new-item-input,
+.edit-item-input { /* NEW: Shared style for edit input */
+    flex-grow: 1;
+    padding: 8px 10px;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    font-size: 0.95em;
+    box-sizing: border-box;
+    margin-top: 0;
+}
+
+/* NEW STYLES FOR HOUSE MODEL DETAILS (ROOMS & FEATURES) */
+.house-model-details-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    margin-top: 15px;
+    justify-content: flex-end; /* Align buttons to the right */
+}
+
+.field-group {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #fcfcfc;
+}
+
+.field-group label {
+    font-weight: bold;
+    color: #444;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.checkbox-group label {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 0;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+    margin-right: 8px;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #999;
+    border-radius: 4px;
+    background-color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.checkbox-group input[type="checkbox"]:checked {
+    border-color: #007bff;
+    background-color: #007bff;
+    position: relative;
+}
+.checkbox-group input[type="checkbox"]:checked::after {
+    content: '✔';
+    color: white;
+    font-size: 0.7em;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+.checkbox-group input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+    background-color: #e9ecef;
+    border-color: #ccc;
+    opacity: 0.7;
+}
+
+.checkbox-group input[type="text"] {
+    margin-top: 5px;
+    padding: 6px 10px;
+    font-size: 0.9em;
+    width: calc(100% - 16px);
+    opacity: 1;
+    transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.checkbox-group input[type="text"].hidden {
+    display: none;
+}
+
+.checkbox-group input[type="text"]:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+    color: #888;
+}
+
+/* Table styles for index.html */
+.content-container {
+    width: 100%;
+    max-width: 800px;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    box-sizing: border-box;
+}
+
+#addPlotBtn {
+    padding: 10px 15px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 20px;
+    display: block;
+    margin-left: auto;
+    box-shadow: 0 2px 5px rgba(0, 123, 255, 0.2);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#addPlotBtn:hover {
+    background-color: #218838;
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 25px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    color: #444;
+    text-transform: uppercase;
+    font-size: 0.9em;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+tr:hover {
+    background-color: #e9ecef;
+}
+
+td:last-child {
+    text-align: center;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+/* Action buttons within table (Edit/Delete) */
+.action-button {
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 0.9em;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.action-button.edit {
+    background-color: #28a745;
+    color: white;
+}
+.action-button.edit:hover {
+    background-color: #218838;
+}
+
+.action-button.delete {
+    background-color: #dc3545;
+    color: white;
+}
+.action-button.delete:hover {
+    background-color: #c82333;
+}
+
+/* Message for no plots */
+#noPlotsMessage {
+    text-align: center;
+    color: #777;
+    padding: 20px;
+    font-style: italic;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    margin-top: 25px;
+    width: 100%;
+    max-width: 800px;
+}
+
+/* Hide utility */
+.hidden {
+    display: none !important;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.spinner {
+    border: 4px solid rgba(0, 123, 255, 0.1);
+    border-left-color: #007bff;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    body {
+        padding: 10px;
+    }
+    h1 {
+        font-size: 1.7em;
+    }
+    .section-title {
+        font-size: 1.3em;
+    }
+    .form-container {
+        padding: 20px;
+    }
+    .form-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .house-model-details-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .house-model-details-actions button {
+        width: 100%;
+    }
+    th, td {
+        padding: 8px 10px;
+        font-size: 0.9em;
+    }
+    td:last-child {
+        flex-direction: column;
+        gap: 5px;
+    }
+    .action-button {
+        width: 100%;
+    }
+    #addPlotBtn {
+        width: 100%;
+        margin-left: 0;
+    }
+    .field-with-add-button,
+    .new-item-input-container,
+    .edit-item-input-container { /* NEW: Responsive for edit container */
+        flex-wrap: wrap;
+    }
+    .add-new-btn,
+    .edit-item-btn, /* NEW: Responsive for edit button */
+    .new-item-save-btn,
+    .new-item-cancel-btn,
+    .edit-item-save-btn,
+    .edit-item-cancel-btn {
+        flex-basis: 48%; /* Adjust for two buttons per row on small screens */
+    }
+    .new-item-input,
+    .edit-item-input {
+        flex-basis: 100%;
+    }
+    .grid-container {
+        grid-template-columns: 1fr;
+    }
+}

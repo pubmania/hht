@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>House Hunting Tracker</title>
+  <!-- Link to your custom styles.css -->
+  <link rel="stylesheet" href="styles.css">
+  <!-- Ensure Tailwind CSS CDN is still present for its reset/base styles 
+  <script src="https://cdn.tailwindcss.com"></script>-->
+</head>
+<body>
+  <!-- START: ADD THIS LOADING OVERLAY SECTION -->
+  <div id="loadingOverlay" class="loading-overlay hidden">
+    <div class="spinner"></div>
+  </div>
+  <!-- END: ADD THIS LOADING OVERLAY SECTION -->
+
+  <div class="content-container">
+    <h1>House Hunting Tracker</h1>
+    <button id="addPlotBtn">Add New Plot</button>
+    
+    <div class="table-container">
+      <table id="trackerTable">
+        <thead>
+          <tr>
+            <th>Plot</th>
+            <th>Facing</th>
+            <th>Cost</th>
+            <th>Stamp Duty</th>
+            <th>Location</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="plotTable">
+          <!-- Data inserted by app.js -->
+        </tbody>
+      </table>
+      <p id="noPlotsMessage" class="hidden">No plots found. Click "Add New Plot" to get started!</p>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

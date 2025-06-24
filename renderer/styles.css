@@ -1,0 +1,610 @@
+/* renderer/styles.css */
+
+/* Basic Body and Font Styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    background-color: #f8f8f8; /* A very light grey background */
+    margin: 0;
+    padding: 20px; /* Some universal padding */
+    display: flex;
+    flex-direction: column; /* For vertical stacking */
+    align-items: center; /* Center content horizontally */
+    min-height: 100vh; /* Ensure it takes full height */
+    box-sizing: border-box; /* Include padding in total dimensions */
+}
+
+/* Main headings */
+h1 {
+    font-size: 2em; /* Twice the base font size */
+    color: #333;
+    margin-bottom: 25px; /* Space below heading */
+    text-align: center;
+}
+/* New for section titles inside the form */
+.section-title {
+    font-size: 1.5em; /* Slightly smaller than h1, larger than labels */
+    color: #444;
+    margin-top: 30px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 10px;
+}
+
+
+/* Form container for general layout */
+.form-container {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: 500px; /* Limit form width for readability */
+    margin-bottom: 30px; /* Space below the form */
+    box-sizing: border-box;
+}
+
+/* Labels for form fields */
+form label {
+    display: block; /* Each label on its own line */
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #555;
+    margin-top: 15px; /* Space between form groups */
+}
+
+/* Common input and select styles */
+form input[type="text"],
+form input[type="number"],
+form select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1em;
+    box-sizing: border-box; /* Ensures padding doesn't increase width */
+    transition: border-color 0.2s ease;
+}
+
+form input[type="text"]:focus,
+form input[type="number"]:focus,
+form select:focus {
+    outline: none;
+    border-color: #007bff; /* Blue border on focus */
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* Subtle glow */
+}
+
+/* Radio buttons - Custom styling for better look than default browser ones */
+.radio-group {
+    display: flex;
+    gap: 20px; /* Space between radio options */
+    margin-top: 8px;
+    margin-bottom: 15px;
+}
+
+.radio-group label {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: normal; /* Override bold from generic label rule */
+    margin-top: 0; /* Override margin-top from generic label rule */
+}
+
+.radio-group input[type="radio"] {
+    appearance: none; /* Hide default radio button */
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #999;
+    border-radius: 50%;
+    background-color: #fff;
+    margin-right: 8px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.radio-group input[type="radio"]:checked {
+    border-color: #007bff; /* Blue border when checked */
+    background-color: #007bff; /* Fill with blue when checked */
+    box-shadow: inset 0 0 0 4px #fff; /* Inner white circle */
+}
+
+.radio-group input[type="radio"]:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.4);
+}
+
+/* Form Actions Container for main Save/Cancel buttons */
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+/* Primary/Secondary Buttons */
+.action-button-primary,
+.action-button-secondary {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    min-width: 120px;
+}
+
+.action-button-primary {
+    background-color: #007bff;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0, 123, 255, 0.2);
+}
+
+.action-button-primary:hover {
+    background-color: #0056b3;
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.action-button-secondary {
+    background-color: #6c757d;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.action-button-secondary:hover {
+    background-color: #5a6268;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Styles for Add New Lookup Item UI */
+.field-with-add-button {
+    display: flex;
+    align-items: center; /* Vertically align select and button */
+    gap: 10px; /* Space between select and button */
+    margin-bottom: 10px; /* Space below this row */
+}
+
+.field-with-add-button select {
+    flex-grow: 1; /* Allow select to take available space */
+    margin-bottom: 0; /* Override default label/input margin */
+}
+
+/* Styles for Add/Edit/Cancel buttons in field-with-add-button and input containers */
+.add-new-btn,
+.edit-item-btn, /* NEW: for the 'Edit Name' button */
+.new-item-save-btn,
+.new-item-cancel-btn,
+.edit-item-save-btn, /* NEW: for the 'Save' button in edit mode */
+.edit-item-cancel-btn { /* NEW: for the 'X' button in edit mode */
+    padding: 8px 12px;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em; /* Adjusted to be more consistent */
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    flex-shrink: 0; /* Prevent buttons from shrinking too much */
+}
+
+/* Specific colors for action buttons */
+.add-new-btn {
+    background-color: #28a745; /* Green for add */
+}
+.add-new-btn:hover {
+    background-color: #218838;
+}
+
+.edit-item-btn { /* NEW: Style for the 'Edit Name' button */
+    background-color: #007bff; /* Blue for edit */
+    font-size: 0.9em; /* Smaller font for inline edit */
+    padding: 8px 10px; /* Smaller padding */
+}
+.edit-item-btn:hover {
+    background-color: #0056b3;
+}
+
+.new-item-save-btn, .edit-item-save-btn {
+    background-color: #007bff; /* Blue */
+}
+.new-item-save-btn:hover, .edit-item-save-btn:hover {
+    background-color: #0056b3;
+}
+
+.new-item-cancel-btn, .edit-item-cancel-btn {
+    background-color: #dc3545; /* Red */
+}
+.new-item-cancel-btn:hover, .edit-item-cancel-btn:hover {
+    background-color: #c82333;
+}
+
+/* Containers for new item input and edit item input */
+.new-item-input-container,
+.edit-item-input-container { /* NEW: Shared style for edit container */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+    border: 1px dashed #ccc;
+}
+
+.new-item-input,
+.edit-item-input { /* NEW: Shared style for edit input */
+    flex-grow: 1;
+    padding: 8px 10px;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    font-size: 0.95em;
+    box-sizing: border-box;
+    margin-top: 0;
+}
+
+/* NEW STYLES FOR HOUSE MODEL DETAILS (ROOMS & FEATURES) */
+/* The main button to open the modal (on the form itself) */
+#houseModelDetailsSectionButtons {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    padding: 0; /* No padding needed here, just for the button */
+    border: none;
+    background-color: transparent;
+    display: flex; /* To align label and button */
+    align-items: center;
+}
+#houseModelDetailsSectionButtons label {
+    margin: 0 10px 0 0; /* Space between label and button */
+}
+
+
+.house-model-details-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    margin-top: 15px; /* Adjust for spacing inside modal */
+    justify-content: flex-end; /* Align buttons to the right */
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+}
+.house-model-details-actions button {
+    flex-shrink: 0; /* Prevent buttons from shrinking too much */
+}
+
+
+.field-group {
+    margin-bottom: 20px;
+    padding: 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #fcfcfc;
+}
+
+.field-group label {
+    font-weight: bold;
+    color: #444;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.grid-container {
+    display: flex; /* Changed from grid-template-columns to flex-direction column for stacking */
+    flex-direction: column; /* Stack items vertically */
+    gap: 10px; /* Space between room/feature items */
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #fefefe;
+}
+
+/* Individual room and feature item styling within the grid container */
+.room-item, .feature-item {
+    display: grid;
+    /* Define columns for room-item */
+    grid-template-columns: 2fr 1.5fr 1fr auto; /* Name, Size, Has, Remove Button */
+    gap: 10px; /* Space between columns */
+    align-items: center;
+    padding: 8px;
+    border: 1px solid #eee;
+    border-radius: 5px;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.feature-item {
+    /* Define columns for feature-item */
+    grid-template-columns: 2fr 1fr auto; /* Name, Has, Remove Button */
+}
+
+
+.input-field {
+    width: auto; /* Override default width for grid items */
+    margin-bottom: 0; /* Remove default margin */
+}
+
+/* Styles for the "X" remove buttons */
+.remove-room-btn, .remove-feature-btn {
+    background: none;
+    border: none;
+    font-size: 1.2em;
+    cursor: pointer;
+    color: #dc3545;
+    padding: 0 5px;
+    transition: color 0.2s ease;
+    align-self: center; /* Vertically center in grid cell */
+    justify-self: center; /* Horizontally center in grid cell */
+    width: 30px; /* Make clickable area reasonable */
+    height: 30px; /* Make clickable area reasonable */
+}
+
+.remove-room-btn:hover, .remove-feature-btn:hover {
+    color: #c82333;
+}
+
+
+/* Table styles for index.html */
+.content-container {
+    width: 100%;
+    max-width: 800px;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    box-sizing: border-box;
+}
+
+#addPlotBtn {
+    padding: 10px 15px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 20px;
+    display: block;
+    margin-left: auto;
+    box-shadow: 0 2px 5px rgba(0, 123, 255, 0.2);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+#addPlotBtn:hover {
+    background-color: #218838;
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 25px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    color: #444;
+    text-transform: uppercase;
+    font-size: 0.9em;
+}
+
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+tr:hover {
+    background-color: #e9ecef;
+}
+
+td:last-child {
+    text-align: center;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+/* Action buttons within table (Edit/Delete) */
+.action-button {
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 0.9em;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+}
+
+.action-button.edit {
+    background-color: #28a745;
+    color: white;
+}
+.action-button.edit:hover {
+    background-color: #218838;
+}
+
+.action-button.delete {
+    background-color: #dc3545;
+    color: white;
+}
+.action-button.delete:hover {
+    background-color: #c82333;
+}
+
+/* Message for no plots */
+#noPlotsMessage {
+    text-align: center;
+    color: #777;
+    padding: 20px;
+    font-style: italic;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    margin-top: 25px;
+    width: 100%;
+    max-width: 800px;
+}
+
+/* Hide utility */
+.hidden {
+    display: none !important;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.spinner {
+    border: 4px solid rgba(0, 123, 255, 0.1);
+    border-left-color: #007bff;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* --- MODAL STYLES (NEW - Adjusted for 'hidden' class toggling) --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6); /* Semi-transparent dark background */
+    display: flex; /* Use flexbox to center content when visible */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    z-index: 99; /* Below loading overlay (1000) but above everything else */
+    /* No opacity/visibility transitions here, rely solely on .hidden */
+}
+
+/* This rule makes the modal disappear when the 'hidden' class is applied by JS */
+.modal-overlay.hidden {
+    display: none !important;
+}
+
+.modal-content {
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); /* Deeper shadow for modal */
+    width: 90%; /* Responsive width */
+    max-width: 600px; /* Maximum width for the modal */
+    max-height: 90vh; /* Max height to prevent overflow on small screens */
+    overflow-y: auto; /* Enable scrolling if content is too long */
+    display: flex;
+    flex-direction: column; /* Stack header, body */
+    position: relative; /* For absolute positioning of close button */
+    /* Optional: Add a subtle entry animation, but still rely on 'hidden' for display toggle */
+    transform: scale(0.95); /* Start slightly smaller */
+    opacity: 0; /* Start invisible */
+    transition: transform 0.2s ease-out, opacity 0.2s ease-out;
+}
+
+/* When .hidden is removed, these styles make it appear */
+.modal-overlay:not(.hidden) .modal-content {
+    transform: scale(1); /* Scale to full size */
+    opacity: 1; /* Fade in */
+}
+
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ddd; /* Subtle separator */
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+.modal-title {
+    font-size: 1.6em; /* Slightly smaller than main h1 */
+    color: #333;
+    margin: 0; /* Remove default margin */
+    text-align: left; /* Ensure title is left-aligned within modal */
+}
+
+.modal-close-button {
+    background: none;
+    border: none;
+    font-size: 2em; /* Large 'X' */
+    color: #888;
+    cursor: pointer;
+    padding: 0 8px;
+    transition: color 0.2s ease;
+}
+
+.modal-close-button:hover {
+    color: #333;
+}
+
+.modal-body {
+    flex-grow: 1; /* Allows the body to take up available space */
+    overflow-y: auto; /* Enables scrolling for content within the modal body */
+    padding-right: 5px; /* Add slight padding to account for scrollbar */
+}
+
+/* Adjustments for buttons/layout within the modal content */
+/* The buttons within the modal for save/cancel should align right within the modal body */
+.house-model-details-modal-inner .house-model-details-actions {
+    justify-content: flex-end; /* Overrides previous form-wide right alignment */
+    margin-top: 0; /* Reset top margin if needed inside modal */
+}
+
+/* Responsive adjustments for modal */
+@media (max-width: 600px) {
+    .modal-content {
+        width: 95%; /* Take up more width on smaller screens */
+        padding: 20px;
+    }
+    .modal-title {
+        font-size: 1.4em;
+    }
+    .modal-close-button {
+        font-size: 1.8em;
+    }
+    /* Adjust room/feature item grid for small screens within modal */
+    .room-item, .feature-item {
+        grid-template-columns: 1fr; /* Stack inputs vertically */
+    }
+    .room-item input, .feature-item input,
+    .room-item label, .feature-item label,
+    .room-item button, .feature-item button {
+        width: 100%; /* Make inputs and buttons full width */
+        margin-bottom: 5px; /* Add some space between stacked elements */
+    }
+    .room-item .flex, .feature-item .flex {
+        flex-wrap: wrap; /* Allow checkbox and label to wrap if needed */
+        justify-content: flex-start; /* Align checkbox group left */
+        width: 100%;
+    }
+}
