@@ -6,8 +6,8 @@ import { initLocationLogic, populateLocations, getLocationData } from './locatio
 import { initDevelopmentLogic, populateDevelopments, getDevelopmentData } from './development-logic.js';
 import { initBuilderLogic, populateBuilders, getBuilderData } from './builder-logic.js';
 import { initHouseModelLogic, populateHouseModels, getHouseModelData } from './house-model-logic.js';
-// ONLY import initHouseModelDetails AND displayAndSetEditable.
-import { initHouseModelDetails, displayAndSetEditable } from './house-model-details-logic.js'; 
+// ********** RE-ENABLE THIS IMPORT **********
+import { displayAndSetEditable } from './house-model-details-logic.js'; 
 
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -36,7 +36,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const locationSelect = document.getElementById("location_select"); 
     const addNewLocationBtn = document.getElementById('addNewLocationBtn'); 
     const newLocationInputContainer = document.getElementById('newLocationInputContainer'); 
-    const newLocationNameInput = document.getElementById('newLocationName'); 
+    const newLocationNameInput = newLocationInputContainer ? document.getElementById('newLocationName') : null; // Defensive check
     const saveNewLocationBtn = document.getElementById('saveNewLocationBtn'); 
     const cancelNewLocationBtn = document.getElementById('cancelNewLocationBtn'); 
     const editLocationInputContainer = document.getElementById('editLocationInputContainer'); 
@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const builderSelect = document.getElementById("builder_select"); 
     const addNewBuilderBtn = document.getElementById('addNewBuilderBtn'); 
     const newBuilderInputContainer = document.getElementById('newBuilderInputContainer'); 
-    const newBuilderNameInput = document.getElementById('newBuilderName'); 
+    const newBuilderNameInput = newBuilderInputContainer ? document.getElementById('newBuilderName') : null; // Defensive check
     const saveNewBuilderBtn = document.getElementById('saveNewBuilderBtn'); 
     const cancelNewBuilderBtn = document.getElementById('cancelNewBuilderBtn'); 
     const linkBuilderToDevelopmentContainer = document.getElementById('linkBuilderToDevelopmentContainer'); 
@@ -84,6 +84,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const saveHouseModelBtn = document.getElementById('saveHouseModelBtn'); 
     const cancelHouseModelBtn = document.getElementById('cancelHouseModelBtn'); 
 
+    // House Model Details Section Elements (on main form)
+    const houseModelDetailsSectionButtons = document.getElementById('houseModelDetailsSectionButtons'); 
+    const editModelDetailsBtn = document.getElementById('editModelDetailsBtn'); 
+
 
     // --- CRITICAL DEBUGGING LOGS: Verify all elements are found by form-main.js ---
     console.log("form-main.js: Verifying DOM element retrieval for initialization:");
@@ -106,49 +110,63 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("  addNewBuilderBtn:", addNewBuilderBtn);
     console.log("  houseModelSelect:", houseModelSelect);
     console.log("  addNewHouseModelBtn:", addNewHouseModelBtn);
-    console.log("  houseModelDetailsSectionButtons (div on main form):", document.getElementById('houseModelDetailsSectionButtons'));
-    console.log("  editModelDetailsBtn (button on main form):", document.getElementById('editModelDetailsBtn'));
-    console.log("  houseModelDetailsModal (modal overlay, should be found):", document.getElementById('houseModelDetailsModal'));
-    console.log("  roomsContainer (inside modal, should be found):", document.getElementById('roomsContainer'));
-    console.log("  featuresContainer (inside modal, should be found):", document.getElementById('featuresContainer'));
-    console.log("  saveModelDetailsBtn (inside modal, should be found):", document.getElementById('saveModelDetailsBtn'));
-    console.log("  cancelModelDetailsBtn (inside modal, should be found):", document.getElementById('cancelModelDetailsBtn'));
-
+    // Explicitly log the status of the problematic elements
+    console.log("  houseModelDetailsSectionButtons (div on main form):", houseModelDetailsSectionButtons);
+    console.log("  editModelDetailsBtn (button on main form):", editModelDetailsBtn);
+    // Also explicitly log the modal elements, even though HMDL is disabled.
+    console.log("  houseModelDetailsModal (modal overlay):", document.getElementById('houseModelDetailsModal'));
+    console.log("  roomsContainer (inside modal):", document.getElementById('roomsContainer'));
+    console.log("  featuresContainer (inside modal):", document.getElementById('featuresContainer'));
+    console.log("  saveModelDetailsBtn (inside modal):", document.getElementById('saveModelDetailsBtn'));
+    console.log("  cancelModelDetailsBtn (inside modal):", document.getElementById('cancelModelDetailsBtn'));
     // --- END CRITICAL DEBUGGING LOGS ---
 
 
     // --- Initialize Sub-Modules ---
     try { 
+        if (!houseModelDetailsSectionButtons || !editModelDetailsBtn) {
+            let missing = [];
+            if (!houseModelDetailsSectionButtons) missing.push('#houseModelDetailsSectionButtons');
+            if (!editModelDetailsBtn) missing.push('#editModelDetailsBtn');
+            throw new Error(`form-main.js: Critical UI elements missing: ${missing.join(', ')}. Check form.html IDs/structure.`);
+        }
+
+        // All init*Logic calls are now re-enabled.
         initCostLogic({
             costValueField, costRangeField, costValueInput, minCostInput, maxCostInput, stampDutyInput, costKnownRadios
         });
+        
         initLocationLogic({
             locationSelect, addNewLocationBtn, newLocationInputContainer, newLocationNameInput, saveNewLocationBtn, cancelNewLocationBtn,
             editLocationInputContainer, editLocationNameInput, saveLocationBtn, cancelLocationBtn
         });
+        
         initDevelopmentLogic({
             developmentSelect, addNewDevelopmentBtn, newDevelopmentInputContainer, newDevelopmentNameInput, saveNewDevelopmentBtn, cancelNewDevelopmentBtn,
             locationSelect,
             editDevelopmentInputContainer, editDevelopmentNameInput, saveDevelopmentBtn, cancelDevelopmentBtn
         });
+        
         initBuilderLogic({
             builderSelect, addNewBuilderBtn, newBuilderInputContainer, newBuilderNameInput, saveNewBuilderBtn, cancelNewBuilderBtn,
             linkBuilderToDevelopmentContainer, existingBuilderSelect, saveLinkBuilderBtn, cancelLinkBuilderBtn,
             developmentSelect,
             editBuilderInputContainer, editBuilderNameInput, saveBuilderBtn, cancelBuilderBtn
         });
-        // CRITICAL CHANGE: Call initHouseModelDetails with NO parameters.
-        // It now gets all its required DOM elements internally.
-        initHouseModelDetails(); 
+
         initHouseModelLogic({
             houseModelSelect, addNewHouseModelBtn, newHouseModelInputContainer, newHouseModelNameInput, saveNewHouseModelBtn, cancelNewHouseModelBtn,
             builderSelect,
-            // Only pass elements for House Model Logic, not internal modal elements
             editHouseModelInputContainer, editHouseModelNameInput, saveHouseModelBtn, cancelHouseModelBtn
         });
+
     } catch (e) {
         console.error("form-main.js: Error during sub-module initialization:", e);
-        alert(`Failed to initialize form elements: ${e.message || 'An unknown error occurred'}. Please check console for details.`);
+        let alertMessage = `Failed to initialize form elements: ${e.message || 'An unknown error occurred'}.`;
+        if (e.message && e.message.includes('Critical UI elements missing')) {
+            alertMessage += ` Please check form.html for correct IDs.`;
+        }
+        alert(alertMessage);
         return; 
     }
 
@@ -162,7 +180,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         populateBuilders(null);
         houseModelSelect.value = '';
         populateHouseModels(null);
-        displayAndSetEditable(null, null, null, false); // Clear details and hide button when parent changes
+        // ********** RE-ENABLE THIS CALL **********
+        displayAndSetEditable(null, null, null, false); 
     });
 
     developmentSelect.addEventListener('change', async () => {
@@ -171,14 +190,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         builderSelect.value = '';
         houseModelSelect.value = '';
         populateHouseModels(null);
-        displayAndSetEditable(null, null, null, false); // Clear details and hide button when parent changes
+        // ********** RE-ENABLE THIS CALL **********
+        displayAndSetEditable(null, null, null, false); 
     });
 
     builderSelect.addEventListener('change', async () => {
         const selectedBuilderId = builderSelect.value;
         await populateHouseModels(selectedBuilderId);
         houseModelSelect.value = '';
-        displayAndSetEditable(null, null, null, false); // Clear details and hide button when parent changes
+        // ********** RE-ENABLE THIS CALL **********
+        displayAndSetEditable(null, null, null, false); 
     });
 
 
@@ -195,29 +216,29 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log(`form-main.js: Attempting to fetch plot with ID: ${id}`);
         try {
             const plot = await window.api.getPlotById(Number(id));
-            console.log('form-main.js: Fetched plot:', plot);
+            console.log('form-main.js: Fetched plot:', plot); 
 
             if (plot) {
                 plotNumberInput.value = plot.plot_number;
                 entranceFacingSelect.value = plot.entrance_facing;
                 
+                // Keep this re-enabled.
                 setCostFields(plot); 
+                
+                console.log("form-main.js: Populating Locations with plot.location_id:", plot.location_id);
                 await populateLocations(plot.location_id); 
                 
                 if (plot.location_id) {
+                    console.log("form-main.js: Populating Developments with plot.location_id:", plot.location_id, "and plot.development_id:", plot.development_id);
                     await populateDevelopments(plot.location_id, plot.development_id);
                     if (plot.development_id) {
+                        console.log("form-main.js: Populating Builders with plot.development_id:", plot.development_id, "and plot.builder_id:", plot.builder_id);
                         await populateBuilders(plot.development_id, plot.builder_id);
                         if (plot.builder_id) {
+                            console.log("form-main.js: Populating House Models with plot.builder_id:", plot.builder_id, "and plot.house_model_id:", plot.house_model_id);
                             await populateHouseModels(plot.builder_id, plot.house_model_id);
-                            // When loading an existing plot, details are displayed in READ-ONLY mode initially.
-                            // The modal will open only when 'Edit Details' button is clicked.
-                            
-                            //displayAndSetEditable(plot.house_model_id, plot.rooms_data, plot.features_data, false); 
-                            const rooms = Array.isArray(plot.rooms_data) ? plot.rooms_data : [];
-                            const features = Array.isArray(plot.features_data) ? plot.features_data : [];
-                            displayAndSetEditable(plot.house_model_id, rooms, features, false);
-
+                            // ********** RE-ENABLE THIS CALL **********
+                            displayAndSetEditable(plot.house_model_id, plot.rooms_data, plot.features_data, false); 
                         }
                     }
                 }
@@ -231,7 +252,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             }
         } catch (error) {
             console.error('form-main.js: Error fetching plot by ID:', error);
-            alert(`Error loading plot data: ${error.message}. Please check console for details.`);
+            let alertMessage = `Error loading plot data: ${error.message}.`;
+            alert(alertMessage + ` Please check console for details.`);
             window.location.href = "index.html"; 
         } finally {
             hideLoading();
@@ -242,10 +264,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         submitButton.textContent = "Save";
         console.log("form-main.js: Setting form title to 'Add Plot'");
         
-        await populateLocations();
-        // Do NOT automatically open modal or set editable for house model details.
-        // It will be managed by `house-model-logic.js` when a new model is added/selected.
-        displayAndSetEditable(null, null, null, false); // Initialize in a cleared, non-editable state
+        await populateLocations(); 
+        // ********** RE-ENABLE THIS CALL **********
+        displayAndSetEditable(null, null, null, false); 
     }
 
     // --- Main Form Submission Handler ---

@@ -61,7 +61,8 @@ function initialize(appPath, ipcMain) {
                 entrance_facing TEXT,
                 cost_known INTEGER,
                 cost_value REAL,
-                cost_range TEXT,
+                min_cost REAL,      -- NEW: Separate min cost field
+                max_cost REAL,      -- NEW: Separate max cost field
                 stamp_duty TEXT,
                 location_id INTEGER,
                 development_id INTEGER,
@@ -74,7 +75,7 @@ function initialize(appPath, ipcMain) {
                 UNIQUE (plot_number, development_id)
             );
         `);
-        console.log('db.js: Tables checked/created. Schema updated for house_models.');
+        console.log('db.js: Tables checked/created. Schema updated for HouseHuntingTracker (min_cost, max_cost).');
 
         // --- Seed Initial Data ---
         const locationsCountRow = db.prepare("SELECT COUNT(*) AS count FROM locations;").get();
@@ -168,21 +169,21 @@ function initialize(appPath, ipcMain) {
 
             db.prepare(`
                 INSERT INTO HouseHuntingTracker (
-                    plot_number, entrance_facing, cost_known, cost_value, cost_range, stamp_duty,
+                    plot_number, entrance_facing, cost_known, cost_value, min_cost, max_cost, stamp_duty,
                     location_id, development_id, builder_id, house_model_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             `).run(
-                'Plot 5', 'North', 1, 350000, null, '£7,500.00',
+                'Plot 5', 'North', 1, 350000, null, null, '£7,500.00', // cost_value, min_cost, max_cost
                 plotALocationId, plotADevelopmentId, plotABuilderId, plotAModelId // Use The Rose model
             );
 
             db.prepare(`
                 INSERT INTO HouseHuntingTracker (
-                    plot_number, entrance_facing, cost_known, cost_value, cost_range, stamp_duty,
+                    plot_number, entrance_facing, cost_known, cost_value, min_cost, max_cost, stamp_duty,
                     location_id, development_id, builder_id, house_model_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             `).run(
-                'Plot 5', 'South East', 0, null, '280000 - 320000', '£5,000.00 - £7,500.00',
+                'Plot 5', 'South East', 0, null, 280000, 320000, '£5,000.00 - £7,500.00', // cost_value, min_cost, max_cost
                 plotBLocationId, plotBDevelopmentId, plotBBuilderId, plotBModelId // Use The Gosford model
             );
             console.log('db.js: Initial plot data seeded with two "Plot 5" entries in different developments, linked to house models.');
@@ -197,13 +198,22 @@ function initialize(appPath, ipcMain) {
     ipcMain.handle('getPlots', () => {
         return db.prepare(`
             SELECT 
-                h.id, h.plot_number, h.entrance_facing, h.cost_known, h.cost_value, h.cost_range, h.stamp_duty,
+                h.id, h.plot_number, h.entrance_facing, h.cost_known, h.cost_value, h.min_cost, h.max_cost, h.stamp_duty,
                 l.name AS location_name,
                 d.name AS development_name,
                 b.name AS builder_name,
                 hm.name AS house_model_name,
-                hm.rooms_data,     -- Fetch rooms_data from house_models
-                hm.features_data   -- Fetch features_data from house_models
+                hm.rooms_data,    -- Fetch rooms_data from house_models
+                hm.features_data, -- Fetch features_data from house_models
+                -- ********** NEW: Derived cost_display_string **********
+                CASE 
+                    WHEN h.cost_known = 1 THEN printf('£%.2f', h.cost_value)
+                    WHEN h.min_cost IS NOT NULL AND h.max_cost IS NOT NULL THEN printf('£%.2f - £%.2f', h.min_cost, h.max_cost)
+                    WHEN h.min_cost IS NOT NULL THEN printf('Min £%.2f', h.min_cost)
+                    WHEN h.max_cost IS NOT NULL THEN printf('Max £%.2f', h.max_cost)
+                    ELSE 'N/A'
+                END AS cost_display_string
+                -- ******************************************************
             FROM HouseHuntingTracker h
             LEFT JOIN locations l ON h.location_id = l.id
             LEFT JOIN developments d ON h.development_id = d.id
@@ -218,13 +228,13 @@ function initialize(appPath, ipcMain) {
         console.log(`db.js: getPlotById - received id: ${id}, type: ${typeof id}, parsedId: ${parsedId}`);
         return db.prepare(`
             SELECT 
-                h.id, h.plot_number, h.entrance_facing, h.cost_known, h.cost_value, h.cost_range, h.stamp_duty,
+                h.id, h.plot_number, h.entrance_facing, h.cost_known, h.cost_value, h.min_cost, h.max_cost, h.stamp_duty,
                 h.location_id, l.name AS location_name,
                 h.development_id, d.name AS development_name,
                 h.builder_id, b.name AS builder_name,
                 h.house_model_id, hm.name AS house_model_name,
-                hm.rooms_data,     -- Fetch rooms_data from house_models
-                hm.features_data   -- Fetch features_data from house_models
+                hm.rooms_data,    -- Fetch rooms_data from house_models
+                hm.features_data  -- Fetch features_data from house_models
             FROM HouseHuntingTracker h
             LEFT JOIN locations l ON h.location_id = l.id
             LEFT JOIN developments d ON h.development_id = d.id
@@ -370,7 +380,7 @@ function initialize(appPath, ipcMain) {
                 actualParentId = parentId !== null && parentId !== '' ? parseInt(parentId) : null;
                 params.push(actualParentId);
                 if (isNaN(actualParentId) && (tableName === 'developments' || tableName === 'house_models')) {
-                     throw new Error(`Invalid parent ID for ${tableName}: ${parentId}`);
+                    throw new Error(`Invalid parent ID for ${tableName}: ${parentId}`);
                 }
             }
 
@@ -404,8 +414,9 @@ function initialize(appPath, ipcMain) {
     });
 
     ipcMain.handle('savePlot', (event, plot) => {
+        // Updated destructuring to include min_cost and max_cost
         const { 
-            id, plot_number, entrance_facing, cost_known, cost_value, cost_range, stamp_duty, 
+            id, plot_number, entrance_facing, cost_known, cost_value, min_cost, max_cost, stamp_duty, 
             location_id, development_id, builder_id, house_model_id
         } = plot;
 
@@ -413,18 +424,24 @@ function initialize(appPath, ipcMain) {
         const parsedDevelopmentId = development_id !== null && development_id !== '' ? parseInt(development_id) : null;
         const parsedBuilderId = builder_id !== null && builder_id !== '' ? parseInt(builder_id) : null;
         const parsedHouseModelId = house_model_id !== null && house_model_id !== '' ? parseInt(house_model_id) : null;
+        
+        // Convert string numbers to REAL for min_cost and max_cost
+        const parsedMinCost = min_cost !== null && min_cost !== '' ? parseFloat(min_cost) : null;
+        const parsedMaxCost = max_cost !== null && max_cost !== '' ? parseFloat(max_cost) : null;
 
         if (isNaN(parsedLocationId)) throw new Error('Invalid Location ID.');
         if (isNaN(parsedDevelopmentId)) throw new Error('Invalid Development ID.');
         if (isNaN(parsedBuilderId)) throw new Error('Invalid Builder ID.');
         if (isNaN(parsedHouseModelId)) throw new Error('Invalid House Model ID.');
 
+        // Updated params to include min_cost and max_cost, and exclude cost_range
         const params = [
             plot_number,
             entrance_facing,
-            cost_known ? 1 : 0,
-            cost_value,
-            cost_range,
+            cost_known ? 1 : 0, // cost_known
+            cost_value,         // cost_value (for known cost)
+            parsedMinCost,      // min_cost (for range cost)
+            parsedMaxCost,      // max_cost (for range cost)
             stamp_duty,
             parsedLocationId,
             parsedDevelopmentId,
@@ -439,7 +456,7 @@ function initialize(appPath, ipcMain) {
                 console.log(`db.js: Updating plot ID ${parsedPlotId} with plot_number: ${plot_number}`);
                 db.prepare(`
                     UPDATE HouseHuntingTracker SET 
-                        plot_number = ?, entrance_facing = ?, cost_known = ?, cost_value = ?, cost_range = ?, stamp_duty = ?, 
+                        plot_number = ?, entrance_facing = ?, cost_known = ?, cost_value = ?, min_cost = ?, max_cost = ?, stamp_duty = ?, 
                         location_id = ?, development_id = ?, builder_id = ?, house_model_id = ?
                     WHERE id = ?
                 `).run(...params, parsedPlotId);
@@ -452,9 +469,9 @@ function initialize(appPath, ipcMain) {
                 console.log(`db.js: Inserting new plot with plot_number: ${plot_number}`);
                 const info = db.prepare(`
                     INSERT INTO HouseHuntingTracker (
-                        plot_number, entrance_facing, cost_known, cost_value, cost_range, stamp_duty, 
+                        plot_number, entrance_facing, cost_known, cost_value, min_cost, max_cost, stamp_duty, 
                         location_id, development_id, builder_id, house_model_id
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 `).run(...params);
                 return { success: true, message: 'Plot saved successfully.', id: info.lastInsertRowid };
             }

@@ -350,51 +350,34 @@ form select:focus {
 
 
 /* Table styles for index.html */
-.content-container {
+/* ********** CRITICAL FIX FOR TABLE OVERFLOW ********** */
+.content-container { /* This div now acts as the responsive wrapper */
     width: 100%;
-    max-width: 800px;
+    max-width: 100%;
     background-color: #fff;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
     box-sizing: border-box;
-}
-
-#addPlotBtn {
-    padding: 10px 15px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    font-size: 1em;
-    font-weight: bold;
-    cursor: pointer;
-    margin-bottom: 20px;
-    display: block;
-    margin-left: auto;
-    box-shadow: 0 2px 5px rgba(0, 123, 255, 0.2);
-    transition: background-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-#addPlotBtn:hover {
-    background-color: #218838;
-    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+    overflow-x: auto; /* !!! THIS IS THE KEY !!! */
+    -webkit-overflow-scrolling: touch; /* For smoother scrolling on touch devices */
 }
 
 table {
-    width: 100%;
+    width: 100%; /* Table still tries to take 100% of its PARENT (content-container) */
     border-collapse: collapse;
     margin-top: 25px;
     background-color: #fff;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-    overflow: hidden;
+    /* REMOVED: overflow: hidden; -- because the parent (content-container) now handles it */
 }
 
 th, td {
     padding: 12px 15px;
     text-align: left;
     border-bottom: 1px solid #ddd;
+    white-space: nowrap; /* Prevent text wrapping in cells, allowing table to expand */
 }
 
 th {

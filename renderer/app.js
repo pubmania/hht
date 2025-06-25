@@ -1,3 +1,5 @@
+// renderer/js/app.js
+
 // Get DOM elements for app.js
 const plotTableBody = document.getElementById("plotTable");
 const addPlotBtn = document.getElementById("addPlotBtn");
@@ -17,13 +19,13 @@ async function populatePlotTable() {
     try {
         console.log('app.js: Attempting to fetch plots...');
         const plots = await window.api.getPlots(); // Fetch all plots from main process
-        console.log('app.js: Plots fetched:', plots); // *** VERY IMPORTANT LOG ***
+        console.log('app.js: Plots fetched:', plots); 
 
         plotTableBody.innerHTML = ''; // Clear existing rows
 
         if (plots.length === 0) {
             noPlotsMessage.classList.remove('hidden');
-            const tableElement = document.getElementById('trackerTable'); // Use ID to get table
+            const tableElement = document.getElementById('trackerTable'); 
             if (tableElement) {
                 tableElement.style.display = 'none'; // Hide the table if no data
             }
@@ -35,26 +37,25 @@ async function populatePlotTable() {
                 tableElement.style.display = ''; // Show the table
             }
             plots.forEach(plot => {
-                console.log('app.js: Processing plot:', plot); // Log each plot being processed
+                console.log('app.js: Processing plot:', plot); 
                 const row = plotTableBody.insertRow();
                 
                 row.insertCell().textContent = plot.plot_number;
                 row.insertCell().textContent = plot.entrance_facing;
                 
-                let costDisplay = '';
-                if (plot.cost_known === 1) { // 1 means 'yes'
-                    costDisplay = `£${plot.cost_value ? parseFloat(plot.cost_value).toLocaleString('en-GB') : 'N/A'}`;
-                } else {
-                    costDisplay = plot.cost_range || 'N/A';
-                }
-                row.insertCell().textContent = costDisplay;
+                // ********** Use cost_display_string directly from the plot object **********
+                // This string is now pre-formatted by db.js (e.g., "£350000.00" or "£280000.00 - £320000.00")
+                row.insertCell().textContent = plot.cost_display_string || 'N/A';
+                // **************************************************************************
+
                 row.insertCell().textContent = plot.stamp_duty || 'N/A';
-                // *** DISPLAY THE NEW LOOKUP FIELDS HERE ***
+                
+                // ********** UNCOMMENTED: Display all lookup fields **********
                 row.insertCell().textContent = plot.location_name || 'N/A';
-                // You will need to add columns in index.html's <thead> for these as well
-                // row.insertCell().textContent = plot.development_name || 'N/A';
-                // row.insertCell().textContent = plot.builder_name || 'N/A';
-                // row.insertCell().textContent = plot.house_model_name || 'N/A';
+                row.insertCell().textContent = plot.development_name || 'N/A';
+                row.insertCell().textContent = plot.builder_name || 'N/A';
+                row.insertCell().textContent = plot.house_model_name || 'N/A';
+                // ************************************************************
 
                 const actionsCell = row.insertCell();
                 actionsCell.className = 'flex-row-buttons';

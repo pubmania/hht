@@ -2,36 +2,43 @@
 
 import { showLoading, hideLoading } from './utils.js';
 
-// No global element variables declared here, they will be retrieved directly in init.
+// Declare module-level variables. Initialize them to null.
+// They will be assigned their DOM element references *only* within the DOMContentLoaded listener.
+let houseModelDetailsSectionButtons = null; 
+let editModelDetailsBtn = null;             
+let houseModelDetailsModal = null;
+let closeModelDetailsModalBtn = null;
+let roomsContainer = null; 
+let featuresContainer = null; 
+let saveModelDetailsBtn = null; 
+let cancelModelDetailsBtn = null; 
 
-// Internal state to track current House Model ID and whether in edit mode
-let currentHouseModelId = null;
-let isEditModeActive = false; // Tracks if the inputs within the modal are editable
+let currentHouseModelId = null; 
+let isEditModeActive = false; 
 
-// Default structure for a new room or feature
-const defaultRoom = { name: "", size: "", has_room: 0 }; // Default has_room to 0 (unchecked)
+const defaultRoom = { name: "", size: "", has_room: 0 }; 
 const defaultFeature = { name: "", has_feature: 1 };
 
 
-/**
- * Initializes the house model details section and attaches event listeners.
- * This function now retrieves ALL necessary DOM elements internally using document.getElementById.
- * It no longer accepts an 'elements' parameter.
- */
-export function initHouseModelDetails() {
-    // Retrieve ALL elements directly here
-    const houseModelDetailsSectionButtons = document.getElementById('houseModelDetailsSectionButtons'); 
-    const editModelDetailsBtn = document.getElementById('editModelDetailsBtn');             
-    const houseModelDetailsModal = document.getElementById('houseModelDetailsModal');
-    const closeModelDetailsModalBtn = document.getElementById('closeModelDetailsModalBtn');
-    const roomsContainer = document.getElementById('roomsContainer'); 
-    const featuresContainer = document.getElementById('featuresContainer'); 
-    const saveModelDetailsBtn = document.getElementById('saveModelDetailsBtn'); 
-    const cancelModelDetailsBtn = document.getElementById('cancelModelDetailsBtn'); 
+// ===========================================================================
+// *** Self-Initialization Logic for this Module ***
+// This ensures DOM elements are only accessed AFTER the document is ready.
+// ===========================================================================
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("house-model-details-logic.js: DOMContentLoaded fired. Attempting to initialize module elements and listeners.");
 
-    // --- CRITICAL INITIALIZATION CHECKS: Ensure all required elements are found ---
-    // Log the status of each element after retrieval
-    console.log("house-model-details-logic.js: Initializing. Element status:");
+    // Retrieve ALL elements directly here and assign to module-level variables
+    houseModelDetailsSectionButtons = document.getElementById('houseModelDetailsSectionButtons'); 
+    editModelDetailsBtn = document.getElementById('editModelDetailsBtn');             
+    houseModelDetailsModal = document.getElementById('houseModelDetailsModal');
+    closeModelDetailsModalBtn = document.getElementById('closeModelDetailsModalBtn');
+    roomsContainer = document.getElementById('roomsContainer'); 
+    featuresContainer = document.getElementById('featuresContainer'); 
+    saveModelDetailsBtn = document.getElementById('saveModelDetailsBtn'); 
+    cancelModelDetailsBtn = document.getElementById('cancelModelDetailsBtn'); 
+
+    // --- CRITICAL INITIALIZATION CHECKS ---
+    console.log("house-model-details-logic.js: Element status on DOMContentLoaded (Post Retrieval):");
     console.log("  houseModelDetailsSectionButtons:", houseModelDetailsSectionButtons ? 'Found' : 'NOT FOUND', houseModelDetailsSectionButtons);
     console.log("  editModelDetailsBtn:", editModelDetailsBtn ? 'Found' : 'NOT FOUND', editModelDetailsBtn);
     console.log("  houseModelDetailsModal:", houseModelDetailsModal ? 'Found' : 'NOT FOUND', houseModelDetailsModal);
@@ -41,66 +48,47 @@ export function initHouseModelDetails() {
     console.log("  saveModelDetailsBtn:", saveModelDetailsBtn ? 'Found' : 'NOT FOUND', saveModelDetailsBtn);
     console.log("  cancelModelDetailsBtn:", cancelModelDetailsBtn ? 'Found' : 'NOT FOUND', cancelModelDetailsBtn);
 
-    // If any critical element is missing, throw an error to stop execution early
+    // Assert that critical elements are found. If not, this will throw an error immediately.
+    console.assert(houseModelDetailsSectionButtons, "CRITICAL: #houseModelDetailsSectionButtons not found!");
+    console.assert(editModelDetailsBtn, "CRITICAL: #editModelDetailsBtn not found!");
+    console.assert(houseModelDetailsModal, "CRITICAL: #houseModelDetailsModal not found!");
+    console.assert(closeModelDetailsModalBtn, "CRITICAL: #closeModelDetailsModalBtn not found!");
+    console.assert(roomsContainer, "CRITICAL: #roomsContainer not found!");
+    console.assert(featuresContainer, "CRITICAL: #featuresContainer not found!");
+    console.assert(saveModelDetailsBtn, "CRITICAL: #saveModelDetailsBtn not found!");
+    console.assert(cancelModelDetailsBtn, "CRITICAL: #cancelModelDetailsBtn not found!");
+
+
+    // If any critical element is still null after the assertions (e.g. if console.assert doesn't halt execution
+    // in all environments or during compilation, this manual check provides a failsafe).
     if (!houseModelDetailsSectionButtons || !editModelDetailsBtn || !houseModelDetailsModal || !closeModelDetailsModalBtn ||
         !roomsContainer || !featuresContainer || !saveModelDetailsBtn || !cancelModelDetailsBtn) {
-        const missingElements = [];
-        if (!houseModelDetailsSectionButtons) missingElements.push('#houseModelDetailsSectionButtons');
-        if (!editModelDetailsBtn) missingElements.push('#editModelDetailsBtn');
-        if (!houseModelDetailsModal) missingElements.push('#houseModelDetailsModal');
-        if (!closeModelDetailsModalBtn) missingElements.push('#closeModelDetailsModalBtn');
-        if (!roomsContainer) missingElements.push('#roomsContainer');
-        if (!featuresContainer) missingElements.push('#featuresContainer');
-        if (!saveModelDetailsBtn) missingElements.push('#saveModelDetailsBtn');
-        if (!cancelModelDetailsBtn) missingElements.push('#cancelModelDetailsBtn');
-        
-        const errorMessage = `Missing essential house model details elements for initialization: ${missingElements.join(', ')}. Check form.html IDs/structure.`;
-        console.error("house-model-details-logic.js: initHouseModelDetails FAILED -", errorMessage);
-        throw new Error(errorMessage);
+        const errorMessage = `FATAL ERROR: Some House Model Details elements are missing from the DOM. Cannot initialize module.`;
+        console.error("house-model-details-logic.js:", errorMessage);
+        alert(errorMessage + " Please check console and form.html for correct IDs and structure.");
+        return; // Stop further execution of this module's init
     }
     // --- END CRITICAL INITIALIZATION CHECKS ---
 
-
-    // Assign to module-level variables (after successful retrieval) for other functions to use
-    // (This block ensures these vars are only populated if all elements are found)
-    _houseModelDetailsSectionButtons = houseModelDetailsSectionButtons;
-    _editModelDetailsBtn = editModelDetailsBtn;
-    _houseModelDetailsModal = houseModelDetailsModal;
-    _closeModelDetailsModalBtn = closeModelDetailsModalBtn;
-    _roomsContainer = roomsContainer;
-    _featuresContainer = featuresContainer;
-    _saveModelDetailsBtn = saveModelDetailsBtn;
-    _cancelModelDetailsBtn = cancelModelDetailsBtn;
-
-
-    // Attach event listeners (now confident elements exist)
-    _editModelDetailsBtn.addEventListener('click', openDetailsModal);
-    _saveModelDetailsBtn.addEventListener('click', saveModelDetails);
-    _cancelModelDetailsBtn.addEventListener('click', closeDetailsModal); 
-    _closeModelDetailsModalBtn.addEventListener('click', closeDetailsModal); 
+    // Attach event listeners after elements are confirmed to exist and assigned
+    editModelDetailsBtn.addEventListener('click', openDetailsModal);
+    saveModelDetailsBtn.addEventListener('click', saveModelDetails);
+    cancelModelDetailsBtn.addEventListener('click', closeDetailsModal); 
+    closeModelDetailsModalBtn.addEventListener('click', closeDetailsModal); 
     
     // Close modal if clicking outside content
-    _houseModelDetailsModal.addEventListener('click', (event) => {
-        if (event.target === _houseModelDetailsModal) {
+    houseModelDetailsModal.addEventListener('click', (event) => {
+        if (event.target === houseModelDetailsModal) {
             closeDetailsModal();
         }
     });
 
     // Initial state: hide the modal and the main form's 'Edit Details' button
-    _houseModelDetailsModal.classList.add('hidden');
-    _editModelDetailsBtn.classList.add('hidden');
-    _houseModelDetailsSectionButtons.classList.add('hidden'); // Also hide its container
-}
-
-// Module-level variables for internal use after successful init
-let _houseModelDetailsSectionButtons;
-let _editModelDetailsBtn;
-let _houseModelDetailsModal;
-let _closeModelDetailsModalBtn;
-let _roomsContainer;
-let _featuresContainer;
-let _saveModelDetailsBtn;
-let _cancelModelDetailsBtn;
+    houseModelDetailsModal.classList.add('hidden');
+    editModelDetailsBtn.classList.add('hidden');
+    houseModelDetailsSectionButtons.classList.add('hidden'); // Also hide its container
+});
+// ===========================================================================
 
 
 /**
@@ -108,8 +96,18 @@ let _cancelModelDetailsBtn;
  * This is primarily triggered by the 'Edit Details' button on the main form.
  */
 async function openDetailsModal() {
+    console.log("house-model-details-logic.js: openDetailsModal called. currentHouseModelId:", currentHouseModelId);
+    console.log("house-model-details-logic.js: Checking houseModelDetailsModal (at call):", houseModelDetailsModal);
+
     if (!currentHouseModelId) {
         alert("Please select a House Model to edit its details.");
+        return;
+    }
+    
+    // Defensive check (though init should have caught it, this is a runtime check)
+    if (!houseModelDetailsModal) {
+        console.error("house-model-details-logic.js: houseModelDetailsModal is undefined in openDetailsModal. Re-initialization failed or element missing.");
+        alert("Internal error: Modal element not found for interaction. Please refresh and check console.");
         return;
     }
 
@@ -125,19 +123,17 @@ async function openDetailsModal() {
             if (modelData && modelData.features_data) features = JSON.parse(modelData.features_data);
         } catch(e) { console.error("Error parsing features data on modal open:", e); features = []; }
 
-        // Render content with editable fields using the module-level variables
         renderRooms(rooms, true); 
         renderFeatures(features, true); 
-        setEditMode(true); // Enable all controls within the modal
-        _houseModelDetailsModal.classList.remove('hidden'); // Show the modal
+        setEditMode(true); 
+        houseModelDetailsModal.classList.remove('hidden'); 
     } catch (error) {
         console.error("Failed to load house model details for modal:", error);
         alert("Error loading house model details for editing.");
-        // If error, render empty editable fields so user can still add
         renderRooms([], true); 
         renderFeatures([], true); 
         setEditMode(true);
-        _houseModelDetailsModal.classList.remove('hidden'); // Still try to open for manual entry
+        houseModelDetailsModal.classList.remove('hidden'); 
     } finally {
         hideLoading();
     }
@@ -148,10 +144,16 @@ async function openDetailsModal() {
  * This is triggered by 'Save Details', 'Cancel Edit', or the 'X' button.
  */
 function closeDetailsModal() {
-    _houseModelDetailsModal.classList.add('hidden'); // Hide the modal
-    setEditMode(false); // Disable fields/hide add/remove buttons inside modal
+    console.log("house-model-details-logic.js: closeDetailsModal called.");
+    // Defensive check
+    if (!houseModelDetailsModal) {
+        console.error("house-model-details-logic.js: houseModelDetailsModal is undefined in closeDetailsModal.");
+        return;
+    }
+
+    houseModelDetailsModal.classList.add('hidden'); 
+    setEditMode(false); 
     
-    // After closing modal, re-render the *main form's* read-only display based on latest saved data
     if (currentHouseModelId) {
         showLoading();
         window.api.getHouseModelDetailsById(currentHouseModelId)
@@ -165,55 +167,50 @@ function closeDetailsModal() {
                     if (modelData && modelData.features_data) features = JSON.parse(modelData.features_data);
                 } catch(e) { console.error("Error parsing features data on modal close:", e); features = []; }
                 
-                // Call displayAndSetEditable for the main form's read-only view
-                // We pass roomsDataJson and featuresDataJson, NOT the parsed arrays.
-                // Re-stringifying for consistency with what displayAndSetEditable expects.
                 displayAndSetEditable(currentHouseModelId, JSON.stringify(rooms), JSON.stringify(features), false); 
             })
             .catch(error => {
                 console.error("Failed to re-load house model details after modal close:", error);
-                // On error, revert to showing 'Edit Details' button but no read-only display
                 displayAndSetEditable(currentHouseModelId, null, null, false); 
             })
             .finally(() => {
                 hideLoading();
             });
     } else {
-        // If no currentHouseModelId (e.g., in "Add New Plot" mode, and modal was opened by "Add New House Model"),
-        // ensure the main form's details display (which doesn't exist for a new model) is reset.
         displayAndSetEditable(null, null, null, false); 
     }
 }
 
 
 /**
- * Displays house model details (rooms and features) and manages the 'Edit Details' button visibility.
- * This is now *primarily* used for managing the visibility of the 'Edit Details' button
- * on the main form, and for the initial state when *adding a NEW house model* via the dropdown,
- * which should open the modal directly into edit mode.
- *
+ * Public function to control the display of 'Edit Details' button and potentially open modal
+ * This is called from form-main.js and house-model-logic.js.
  * @param {number|null} houseModelId The ID of the house model to display.
  * @param {string|null} roomsDataJson JSON string of rooms data.
  * @param {string|null} featuresDataJson JSON string of features data.
  * @param {boolean} editable True if fields should be editable (e.g., adding a new model).
  */
 export function displayAndSetEditable(houseModelId, roomsDataJson, featuresDataJson, editable) {
-    currentHouseModelId = houseModelId;
+    currentHouseModelId = houseModelId; // Update internal state
+
+    // Defensive check to ensure elements are ready. If not, log a warning.
+    // The main init in DOMContentLoaded should handle initial population.
+    if (!houseModelDetailsSectionButtons || !editModelDetailsBtn || !houseModelDetailsModal) {
+        console.warn("house-model-details-logic.js: displayAndSetEditable called before module's DOMContentLoaded initialization completed. Elements might be null.");
+        return; 
+    }
+
 
     // Control visibility of the 'Edit Details' button on the main form
     if (houseModelId) {
-        _houseModelDetailsSectionButtons.classList.remove('hidden'); // Show the container for the button
-        _editModelDetailsBtn.classList.remove('hidden'); // Show the button
+        houseModelDetailsSectionButtons.classList.remove('hidden'); 
+        editModelDetailsBtn.classList.remove('hidden'); 
     } else {
-        _houseModelDetailsSectionButtons.classList.add('hidden'); // Hide the container for the button
-        _editModelDetailsBtn.classList.add('hidden'); // Hide the button
+        houseModelDetailsSectionButtons.classList.add('hidden'); 
+        editModelDetailsBtn.classList.add('hidden'); 
     }
 
-    // When adding a new House Model via its dropdown's 'Add' button:
-    // This function will be called with houseModelId = null and editable = true.
-    // In this specific case, we should directly open the modal.
     if (houseModelId === null && editable === true) {
-        // Parse data (which will be empty here) to prepare the modal's content
         let rooms = [];
         let features = [];
         try {
@@ -223,20 +220,14 @@ export function displayAndSetEditable(houseModelId, roomsDataJson, featuresDataJ
             if (featuresDataJson) features = JSON.parse(featuresDataJson);
         } catch(e) { console.error("Error parsing featuresDataJson for new model:", e); }
 
-        renderRooms(rooms, true); // Render with editable inputs (likely empty)
-        renderFeatures(features, true); // Render with editable inputs (likely empty)
-        setEditMode(true); // Ensure all controls within the modal are enabled
-        _houseModelDetailsModal.classList.remove('hidden'); // Show the modal
+        renderRooms(rooms, true); 
+        renderFeatures(features, true); 
+        setEditMode(true); 
+        houseModelDetailsModal.classList.remove('hidden'); 
     } 
-    // If we're setting to non-editable, and the modal is currently open, close it.
-    // This handles cases like changing parent dropdowns, or cancelling a new model entry.
-    else if (editable === false && _houseModelDetailsModal && !_houseModelDetailsModal.classList.contains('hidden')) {
+    else if (editable === false && houseModelDetailsModal && !houseModelDetailsModal.classList.contains('hidden')) {
         closeDetailsModal();
     }
-    // If it's an existing plot being loaded (editable false, houseModelId not null),
-    // we don't open the modal; the 'Edit Details' button becomes visible on the main form.
-    // The current renderRooms/renderFeatures for the main form is now effectively
-    // 'off-screen' as it's within the modal.
 }
 
 
@@ -244,45 +235,42 @@ export function displayAndSetEditable(houseModelId, roomsDataJson, featuresDataJ
  * Sets the edit mode for the details section (inside modal) and updates button visibility.
  * @param {boolean} editMode True to enable editing, false to disable.
  */
-export function setEditMode(editMode) {
+function setEditMode(editMode) { 
     isEditModeActive = editMode;
 
-    // Toggle main buttons within the modal
-    _saveModelDetailsBtn.classList.toggle('hidden', !editMode);
-    _cancelModelDetailsBtn.classList.toggle('hidden', !editMode);
+    // Defensive check
+    if (!saveModelDetailsBtn || !cancelModelDetailsBtn || !roomsContainer || !featuresContainer) {
+        console.error("house-model-details-logic.js: setEditMode called before all elements are populated.");
+        return;
+    }
+
+    saveModelDetailsBtn.classList.toggle('hidden', !editMode);
+    cancelModelDetailsBtn.classList.toggle('hidden', !editMode);
     
-    // --- IMPORTANT: Logic to add initial empty rows if needed when entering edit mode ---
-    // This ensures that when a model with no existing rooms/features is edited,
-    // or a brand new model is being defined, an input row is ready.
     if (editMode) {
-        // Only add if no room items exist AND the add button is visible (meaning we're in an editable state)
-        if (_roomsContainer.querySelectorAll('.room-item').length === 0 && _roomsContainer.querySelector('.add-room-btn')) {
+        if (roomsContainer.querySelectorAll('.room-item').length === 0 && roomsContainer.querySelector('.add-room-btn')) {
             addRoom(); 
         }
-        // Only add if no feature items exist AND the add button is visible (meaning we're in an editable state)
-        if (_featuresContainer.querySelectorAll('.feature-item').length === 0 && _featuresContainer.querySelector('.add-feature-btn')) {
+        if (featuresContainer.querySelectorAll('.feature-item').length === 0 && featuresContainer.querySelector('.add-feature-btn')) {
             addFeature(); 
         }
     }
 
-
-    // Set editability of inputs within the modal
-    _roomsContainer.querySelectorAll('input, select').forEach(input => {
+    roomsContainer.querySelectorAll('input, select').forEach(input => {
         if (input.dataset.static !== 'true') { 
             input.disabled = !editMode;
         }
     });
-    _featuresContainer.querySelectorAll('input, select').forEach(input => {
+    featuresContainer.querySelectorAll('input, select').forEach(input => {
         if (input.dataset.static !== 'true') {
             input.disabled = !editMode;
         }
     });
 
-    // Toggle add/remove buttons for rooms and features (within the modal)
-    _roomsContainer.querySelectorAll('.add-room-btn, .remove-room-btn').forEach(btn => {
+    roomsContainer.querySelectorAll('.add-room-btn, .remove-room-btn').forEach(btn => {
         btn.style.display = editMode ? 'inline-block' : 'none';
     });
-    _featuresContainer.querySelectorAll('.add-feature-btn, .remove-feature-btn').forEach(btn => {
+    featuresContainer.querySelectorAll('.add-feature-btn, .remove-feature-btn').forEach(btn => {
         btn.style.display = editMode ? 'inline-block' : 'none';
     });
 }
@@ -294,15 +282,14 @@ export function setEditMode(editMode) {
  * @param {boolean} editable True if inputs should be editable.
  */
 function renderRooms(rooms, editable) {
-    _roomsContainer.innerHTML = ''; // Clear existing rooms
+    if (!roomsContainer) { console.error("roomsContainer is null in renderRooms - this should not happen post-init."); return; }
+    roomsContainer.innerHTML = ''; 
 
     if (rooms && rooms.length > 0) {
         rooms.forEach((room, index) => {
-            _roomsContainer.appendChild(createRoomElement(room, index, editable));
+            roomsContainer.appendChild(createRoomElement(room, index, editable));
         });
     } 
-    // The logic for adding an initial empty room if needed is now in setEditMode.
-    // So here we only add the 'Add Room' button at the end if in editable mode.
 
     if (editable) {
         const addRoomBtn = document.createElement('button');
@@ -310,7 +297,7 @@ function renderRooms(rooms, editable) {
         addRoomBtn.textContent = 'Add Room';
         addRoomBtn.className = 'add-room-btn action-button-secondary mt-2';
         addRoomBtn.addEventListener('click', addRoom);
-        _roomsContainer.appendChild(addRoomBtn);
+        roomsContainer.appendChild(addRoomBtn);
     }
 }
 
@@ -334,7 +321,6 @@ function createRoomElement(room, index, editable) {
         <button type="button" class="remove-room-btn action-button-danger text-red-500 hover:text-red-700 ${editable ? '' : 'hidden'}">X</button>
     `;
     
-    // Attach event listeners
     const removeBtn = div.querySelector('.remove-room-btn');
     if (removeBtn) {
         removeBtn.addEventListener('click', () => removeRoom(div));
@@ -345,7 +331,6 @@ function createRoomElement(room, index, editable) {
     if (hasCheckbox && sizeInput) {
         hasCheckbox.addEventListener('change', () => {
             sizeInput.classList.toggle('hidden', !hasCheckbox.checked);
-            // Clear size if unchecked
             if (!hasCheckbox.checked) {
                 sizeInput.value = '';
             }
@@ -358,18 +343,16 @@ function createRoomElement(room, index, editable) {
  * Adds a new empty room input field to the UI.
  */
 function addRoom() {
-    // Check if the last existing room item has a name. If not, don't add another empty one.
-    const currentRoomItems = _roomsContainer.querySelectorAll('.room-item');
+    if (!roomsContainer) { console.error("roomsContainer is null in addRoom - this should not happen post-init."); return; }
+    const currentRoomItems = roomsContainer.querySelectorAll('.room-item');
     if (currentRoomItems.length > 0) {
         const lastRoomNameInput = currentRoomItems[currentRoomItems.length - 1].querySelector('.room-name-input');
         if (lastRoomNameInput && lastRoomNameInput.value.trim() === '') {
-            // If the last one is empty, focus on it instead of adding a new one
             lastRoomNameInput.focus();
             return; 
         }
     }
-    // Insert new room element before the 'Add Room' button (which is always the last child if present)
-    _roomsContainer.insertBefore(createRoomElement(defaultRoom, currentRoomItems.length, true), _roomsContainer.lastChild);
+    roomsContainer.insertBefore(createRoomElement(defaultRoom, currentRoomItems.length, true), roomsContainer.lastChild);
 }
 
 /**
@@ -377,11 +360,10 @@ function addRoom() {
  * @param {HTMLElement} roomElement The room element to remove.
  */
 function removeRoom(roomElement) {
+    if (!roomsContainer) { console.error("roomsContainer is null in removeRoom - this should not happen post-init."); return; }
     roomElement.remove();
-    // If all rooms are removed and we are in edit mode, ensure at least one default empty room is present
-    // This happens only if the 'Add Room' button is also present, indicating editable state.
-    if (_roomsContainer.querySelectorAll('.room-item').length === 0 && isEditModeActive && _roomsContainer.querySelector('.add-room-btn')) {
-        _roomsContainer.insertBefore(createRoomElement(defaultRoom, 0, true), _roomsContainer.lastChild);
+    if (roomsContainer.querySelectorAll('.room-item').length === 0 && isEditModeActive && roomsContainer.querySelector('.add-room-btn')) {
+        roomsContainer.insertBefore(createRoomElement(defaultRoom, 0, true), roomsContainer.lastChild);
     }
 }
 
@@ -392,14 +374,14 @@ function removeRoom(roomElement) {
  * @param {boolean} editable True if inputs should be editable.
  */
 function renderFeatures(features, editable) {
-    _featuresContainer.innerHTML = ''; // Clear existing features
+    if (!featuresContainer) { console.error("featuresContainer is null in renderFeatures - this should not happen post-init."); return; }
+    featuresContainer.innerHTML = ''; 
 
     if (features && features.length > 0) {
         features.forEach((feature, index) => {
-            _featuresContainer.appendChild(createFeatureElement(feature, index, editable));
+            featuresContainer.appendChild(createFeatureElement(feature, index, editable));
         });
     }
-    // Logic for adding an initial empty feature if needed is now in setEditMode.
 
     if (editable) {
         const addFeatureBtn = document.createElement('button');
@@ -407,7 +389,7 @@ function renderFeatures(features, editable) {
         addFeatureBtn.textContent = 'Add Feature';
         addFeatureBtn.className = 'add-feature-btn action-button-secondary mt-2';
         addFeatureBtn.addEventListener('click', addFeature);
-        _featuresContainer.appendChild(addFeatureBtn);
+        featuresContainer.appendChild(addFeatureBtn);
     }
 }
 
@@ -429,7 +411,6 @@ function createFeatureElement(feature, index, editable) {
         </div>
         <button type="button" class="remove-feature-btn action-button-danger text-red-500 hover:text-red-700 ${editable ? '' : 'hidden'}">X</button>
     `;
-    // Attach event listener for remove button
     const removeBtn = div.querySelector('.remove-feature-btn');
     if (removeBtn) {
         removeBtn.addEventListener('click', () => removeFeature(div));
@@ -441,8 +422,8 @@ function createFeatureElement(feature, index, editable) {
  * Adds a new empty feature input field to the UI.
  */
 function addFeature() {
-    // Check if the last existing feature item has a name. If not, don't add another empty one.
-    const currentFeatureItems = _featuresContainer.querySelectorAll('.feature-item');
+    if (!featuresContainer) { console.error("featuresContainer is null in addFeature - this should not happen post-init."); return; }
+    const currentFeatureItems = featuresContainer.querySelectorAll('.feature-item');
     if (currentFeatureItems.length > 0) {
         const lastFeatureNameInput = currentFeatureItems[currentFeatureItems.length - 1].querySelector('.feature-name-input');
         if (lastFeatureNameInput && lastFeatureNameInput.value.trim() === '') {
@@ -450,7 +431,7 @@ function addFeature() {
             return;
         }
     }
-    _featuresContainer.insertBefore(createFeatureElement(defaultFeature, currentFeatureItems.length, true), _featuresContainer.lastChild);
+    featuresContainer.insertBefore(createFeatureElement(defaultFeature, currentFeatureItems.length, true), featuresContainer.lastChild);
 }
 
 /**
@@ -458,9 +439,10 @@ function addFeature() {
  * @param {HTMLElement} featureElement The feature element to remove.
  */
 function removeFeature(featureElement) {
+    if (!featuresContainer) { console.error("featuresContainer is null in removeFeature - this should not happen post-init."); return; }
     featureElement.remove();
-    if (_featuresContainer.querySelectorAll('.feature-item').length === 0 && isEditModeActive && _featuresContainer.querySelector('.add-feature-btn')) {
-        _featuresContainer.insertBefore(createFeatureElement(defaultFeature, 0, true), _featuresContainer.lastChild);
+    if (featuresContainer.querySelectorAll('.feature-item').length === 0 && isEditModeActive && featuresContainer.querySelector('.add-feature-btn')) {
+        featuresContainer.insertBefore(createFeatureElement(defaultFeature, 0, true), featuresContainer.lastChild);
     }
 }
 
@@ -470,17 +452,20 @@ function removeFeature(featureElement) {
  * @returns {object} An object containing arrays of room and feature data.
  */
 export function getHouseModelDetailsData() {
+    if (!roomsContainer || !featuresContainer) { 
+        console.error("house-model-details-logic.js: getHouseModelDetailsData called before containers are populated. Returning empty data.");
+        return { rooms: [], features: [] };
+    }
+
     const rooms = [];
-    _roomsContainer.querySelectorAll('.room-item').forEach(item => {
+    roomsContainer.querySelectorAll('.room-item').forEach(item => {
         const nameInput = item.querySelector('.room-name-input');
         const sizeInput = item.querySelector('.room-size-input');
         const hasCheckbox = item.querySelector('.room-has-checkbox');
         
-        // Only include rooms that have a name
         if (nameInput && nameInput.value.trim()) { 
             rooms.push({
                 name: nameInput.value.trim(),
-                // Include size only if the checkbox is checked, otherwise empty string
                 size: (hasCheckbox && hasCheckbox.checked) ? (sizeInput ? sizeInput.value.trim() : "") : "",
                 has_room: hasCheckbox ? (hasCheckbox.checked ? 1 : 0) : 0
             });
@@ -488,11 +473,10 @@ export function getHouseModelDetailsData() {
     });
 
     const features = [];
-    _featuresContainer.querySelectorAll('.feature-item').forEach(item => {
+    featuresContainer.querySelectorAll('.feature-item').forEach(item => {
         const nameInput = item.querySelector('.feature-name-input');
         const hasCheckbox = item.querySelector('.feature-has-checkbox');
         
-        // Only include features that have a name
         if (nameInput && nameInput.value.trim()) { 
             features.push({
                 name: nameInput.value.trim(),
@@ -516,7 +500,6 @@ async function saveModelDetails() {
 
     const { rooms, features } = getHouseModelDetailsData();
 
-    // Basic validation: ensure at least one room or feature is defined with a name
     if (rooms.length === 0 && features.length === 0) {
         alert("Please add at least one room or feature with a name before saving details.");
         return;

@@ -21,21 +21,24 @@
     <button id="addPlotBtn">Add New Plot</button>
     
     <div class="table-container">
-      <table id="trackerTable">
-        <thead>
-          <tr>
-            <th>Plot</th>
-            <th>Facing</th>
-            <th>Cost</th>
-            <th>Stamp Duty</th>
-            <th>Location</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="plotTable">
-          <!-- Data inserted by app.js -->
-        </tbody>
-      </table>
+      <table id="trackerTable" class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+    <thead>
+        <tr class="bg-gray-200 text-gray-700 uppercase text-sm leading-normal">
+            <th class="py-3 px-6 text-left">Plot Number</th>
+            <th class="py-3 px-6 text-left">Entrance Facing</th>
+            <th class="py-3 px-6 text-left">Cost</th>
+            <th class="py-3 px-6 text-left">Stamp Duty</th>
+            <th class="py-3 px-6 text-left">Location</th>
+            <th class="py-3 px-6 text-left">Development</th> <!-- Add this if missing -->
+            <th class="py-3 px-6 text-left">Builder</th>     <!-- Add this if missing -->
+            <th class="py-3 px-6 text-left">House Model</th> <!-- Add this if missing -->
+            <th class="py-3 px-6 text-center">Actions</th>
+        </tr>
+    </thead>
+    <tbody id="plotTable" class="text-gray-600 text-sm font-light">
+        <!-- Rows will be inserted here by app.js -->
+    </tbody>
+</table>
       <p id="noPlotsMessage" class="hidden">No plots found. Click "Add New Plot" to get started!</p>
     </div>
   </div>

@@ -1,174 +1,244 @@
 // renderer/js/edit-lookup-logic.js
 
-import { showLoading, hideLoading } from './utils.js';
-
 /**
- * Initializes inline editing for a lookup dropdown, creating an independent instance.
- * All internal variables and functions are now scoped to this instance via closure.
- *
- * @param {object} elements Object containing DOM references for the lookup control.
- * @param {string} tableName The name of the database table (e.g., 'locations', 'builders').
- * @param {function} refreshFunction The function to call to re-populate the dropdown after changes.
- * @param {function} [parentLookupCheck=null] Optional function (e.g., for developments/house models) to re-evaluate parent selection after an edit.
- * @returns {object} An object with methods to control this specific lookup's editing UI.
+ * Manages the inline adding/editing functionality for lookup fields.
+ * This class abstracts the logic for showing/hiding input fields and handling
+ * save/cancel actions for dynamic dropdown options.
  */
-export function initEditLookup(elements, tableName, refreshFunction, parentLookupCheck = null) {
-    // All these variables are now 'const' or 'let' within this function's scope.
-    // They will be unique for each time initEditLookup is called.
-    const selectElement = elements.selectElement;
-    const addNewBtn = elements.addNewBtn;
-    const newContainer = elements.newContainer;
-    const newNameInput = elements.newNameInput;
-    const saveNewBtn = elements.saveNewBtn;
-    const cancelNewBtn = elements.cancelNewBtn;
-    const editInputContainer = elements.editInputContainer;
-    const editNameInput = elements.editNameInput;
-    const saveEditBtn = elements.saveEditBtn;
-    const cancelEditBtn = elements.cancelEditBtn;
+class EditLookupController {
+    constructor(elements, lookupType, populateFunction, refreshParentDropdown) {
+        this.selectElement = elements.selectElement;
+        this.addNewBtn = elements.addNewBtn;
+        this.newContainer = elements.newContainer;
+        this.newNameInput = elements.newNameInput;
+        this.saveNewBtn = elements.saveNewBtn;
+        this.cancelNewBtn = elements.cancelNewBtn;
 
-    const _tableName = tableName;
-    const _refreshFunction = refreshFunction;
-    const _parentLookupCheck = parentLookupCheck;
+        // ******* CRITICAL FIX HERE *******
+        // Ensure editInputContainer is correctly assigned
+        this.editInputContainer = elements.editInputContainer; 
+        // *********************************
 
-    const editBtn = document.createElement('button'); // This button is also unique to this instance
-    editBtn.type = 'button';
-    editBtn.textContent = 'Edit Name';
-    editBtn.className = 'edit-item-btn';
-    editBtn.id = `edit${_tableName.slice(0, -1)}Btn`; // Still a unique ID per table type for clarity
+        this.editNameInput = elements.editNameInput;
+        this.saveEditBtn = elements.saveEditBtn;
+        this.cancelEditBtn = elements.cancelEditBtn;
 
-    if (selectElement && addNewBtn && addNewBtn.parentNode) {
-        // Insert the edit button right after the add new button
-        addNewBtn.parentNode.insertBefore(editBtn, addNewBtn.nextSibling); 
-        console.log(`edit-lookup-logic.js: ${_tableName} - 'Edit Name' button created and appended.`, editBtn);
-    } else {
-        console.error(`edit-lookup-logic.js: Could not find parent for ${_tableName} edit button. Elements:`, elements);
-        return null; // Critical: return null if initialization fails
+        this.lookupType = lookupType;
+        this.populateFunction = populateFunction;
+        this.refreshParentDropdown = refreshParentDropdown; // Function to call to refresh parent dropdown after item link/unlink
+
+        this.initEventListeners();
+        this.toggleState(); // Set initial state
     }
-    
-    editInputContainer.classList.add('hidden');
 
-    // Event listeners are attached directly to the instance's specific buttons
-    editBtn.addEventListener('click', showEditInput);
-    cancelEditBtn.addEventListener('click', hideEditInput);
-    saveEditBtn.addEventListener('click', saveEditedItem);
+    initEventListeners() {
+        // Event listeners for adding new item
+        if (this.addNewBtn) {
+            this.addNewBtn.addEventListener('click', this.showNewInput.bind(this));
+        }
+        if (this.cancelNewBtn) {
+            this.cancelNewBtn.addEventListener('click', this.hideNewInput.bind(this));
+        }
+        if (this.saveNewBtn) {
+            this.saveNewBtn.addEventListener('click', this.saveNewItem.bind(this));
+        }
 
-    console.log(`edit-lookup-logic.js: ${_tableName} - Event listeners attached to 'Edit Name', 'Cancel Edit', 'Save Edit' buttons.`);
+        // Event listeners for editing existing item
+        // The edit button needs to be dynamically created and attached later by populateDropdown
+        // This controller just provides the handlers.
+        if (this.saveEditBtn) {
+            this.saveEditBtn.addEventListener('click', this.saveEditedItem.bind(this));
+        }
+        if (this.cancelEditBtn) {
+            this.cancelEditBtn.addEventListener('click', this.hideEditInput.bind(this));
+        }
+    }
 
-    // The select's change event listener triggers this instance's toggleControlStates
-    selectElement.addEventListener('change', toggleControlStates);
-    
-    // Mutation observers are also scoped to this instance
-    const observer = new MutationObserver(mutations => {
-        mutations.forEach(mutation => {
-            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                if (mutation.target === newContainer || mutation.target === editInputContainer) {
-                    // Only trigger if the 'hidden' class actually changed state
-                    if (mutation.oldValue.includes('hidden') !== mutation.target.classList.contains('hidden')) {
-                         toggleControlStates();
-                    }
-                }
-            }
-        });
-    });
-    observer.observe(newContainer, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
-    observer.observe(editInputContainer, { attributes: true, attributeFilter: ['class'], attributeOldValue: true });
-
-    // Initial state setup for this specific instance
-    toggleControlStates(); 
-    console.log(`edit-lookup-logic.js: initEditLookup for ${_tableName}. Initial select value: '${selectElement.value}', options count: ${selectElement.options.length}`);
-
-
-    /**
-     * Manages the disabled/enabled states of the select, add button, and edit button
-     * based on whether the new or edit input containers are active.
-     * This function is now an *internal method* for this specific lookup instance.
-     */
-    function toggleControlStates() {
-        const isAdding = !newContainer.classList.contains('hidden');
-        const isEditing = !editInputContainer.classList.contains('hidden');
-
-        if (isAdding || isEditing) {
-            selectElement.disabled = true;
-            addNewBtn.disabled = true;
-            editBtn.disabled = true; 
-            console.log(`edit-lookup-logic.js: ${_tableName} - Entering active mode (add/edit). All controls disabled.`);
+    // Toggles the visibility and state of 'Add New' and 'Edit' sections
+    toggleState() {
+        if (this.newContainer) {
+            this.newContainer.classList.add('hidden'); // Hide 'Add New' by default
+            if (this.newNameInput) this.newNameInput.value = '';
+        }
+        // ******* CRITICAL FIX HERE *******
+        // This ensures the edit container is also hidden initially or after state changes
+        if (this.editInputContainer) {
+             console.log(`edit-lookup-logic.js: ${this.lookupType} - Toggling editInputContainer to hidden.`);
+            this.editInputContainer.classList.add('hidden'); // Hide 'Edit Item' by default
+            if (this.editNameInput) this.editNameInput.value = '';
         } else {
-            selectElement.disabled = false;
-            addNewBtn.disabled = false;
-            editBtn.disabled = !selectElement.value; // Only enabled if an item is selected
-            console.log(`edit-lookup-logic.js: ${_tableName} - Exiting active mode. Select value: '${selectElement.value}', Edit Name disabled: ${editBtn.disabled}`);
+             console.warn(`edit-lookup-logic.js: ${this.lookupType} - editInputContainer is null/undefined during toggleState.`);
+        }
+        // *********************************
+       
+        // Enable/disable add button based on parent selection
+        if (this.addNewBtn && this.selectElement) {
+            // Assume the selectElement's selected value determines if an 'add new' can occur
+            // For locations, this might always be true. For developments, it depends on location.
+            // This logic is typically handled by the calling module (e.g. form-main.js)
+            // disabling/enabling the addNewBtn directly or by passing null to populateFunction.
         }
     }
 
-
-    function showEditInput() {
-        console.log(`edit-lookup-logic.js: ${_tableName} - showEditInput called. Current select value: '${selectElement.value}'`);
-
-        if (!selectElement.value) {
-            alert(`Please select a ${_tableName.slice(0, -1)} to edit.`);
-            return;
+    showNewInput() {
+        if (this.newContainer) {
+            this.newContainer.classList.remove('hidden');
         }
-
-        editInputContainer.classList.remove('hidden');
-        editNameInput.value = selectElement.options[selectElement.selectedIndex].text;
-        editNameInput.focus();
-        editNameInput.disabled = false;
-
-        toggleControlStates();
+        if (this.newNameInput) {
+            this.newNameInput.value = '';
+            this.newNameInput.focus();
+        }
+        // Hide edit input if 'Add New' is shown
+        if (this.editInputContainer) {
+            this.editInputContainer.classList.add('hidden');
+        }
     }
 
-    function hideEditInput() {
-        console.log(`edit-lookup-logic.js: ${_tableName} - hideEditInput called.`);
-
-        editInputContainer.classList.add('hidden');
-        editNameInput.value = '';
-
-        toggleControlStates();
+    hideNewInput() {
+        if (this.newContainer) {
+            this.newContainer.classList.add('hidden');
+        }
+        if (this.newNameInput) {
+            this.newNameInput.value = '';
+        }
+        this.populateFunction(this.selectElement.value, this.selectElement.value); // Re-populate to restore selected value
     }
 
-    async function saveEditedItem() {
-        console.log(`edit-lookup-logic.js: ${_tableName} - saveEditedItem called.`);
-
-        const idToUpdate = selectElement.value;
-        const newName = editNameInput.value.trim();
-
-        if (!idToUpdate) {
-            alert(`No ${_tableName.slice(0, -1)} selected for editing.`);
-            return;
-        }
+    async saveNewItem() {
+        const newName = this.newNameInput.value.trim();
         if (!newName) {
-            alert('Please enter a new name.');
+            alert(`Please enter a name for the new ${this.lookupType.replace('_', ' ')}.`);
             return;
+        }
+
+        const parentId = this.selectElement ? Number(this.selectElement.value) : null;
+
+        // Special handling for house models to include rooms/features
+        let roomsData = null;
+        let featuresData = null;
+        if (this.lookupType === 'house_models') {
+            // ********** CRITICAL DEBUG STEP **********
+            // getHouseModelDetailsData is currently commented out in house-model-logic.js
+            // and house-model-details-logic.js is renamed. So we can't call this.
+            // Re-enable this when house-model-details-logic.js is restored.
+            // if (typeof getHouseModelDetailsData !== 'undefined') {
+            //     const details = getHouseModelDetailsData();
+            //     roomsData = JSON.stringify(details.rooms);
+            //     featuresData = JSON.stringify(details.features);
+            // } else {
+            //     console.warn("getHouseModelDetailsData is not available. Saving house model without details.");
+            // }
+            // *******************************************
         }
 
         showLoading();
         try {
-            const response = await window.api.updateLookupItem(_tableName, Number(idToUpdate), newName);
+            const response = await window.api.addLookupItem(this.lookupType, newName, parentId, roomsData, featuresData);
             if (response.success) {
                 alert(response.message);
-                if (_parentLookupCheck && (_tableName === 'developments' || _tableName === 'house_models')) {
-                     // Get the parent select element dynamically from the current select's DOM structure
-                     // This correctly finds the parent select relative to this instance's selectElement
-                     const currentParentSelect = selectElement.closest('.field-with-add-button').parentNode.previousElementSibling.querySelector('select');
-                     const currentParentId = currentParentSelect ? currentParentSelect.value : null;
-                     await _parentLookupCheck(currentParentId, Number(idToUpdate)); 
-                } else {
-                     await _refreshFunction(Number(idToUpdate)); // Directly refresh this dropdown
+                this.hideNewInput(); // This will also refresh the dropdown
+                await this.populateFunction(parentId, response.id); // Refresh dropdown and select new item
+                // If this is a child lookup (e.g., Development after Location), also refresh the parent dropdown if needed
+                if (this.refreshParentDropdown && this.lookupType === 'developments' && this.selectElement) {
+                    await this.refreshParentDropdown(this.selectElement.value, response.id);
                 }
-                hideEditInput();
             } else {
-                alert(`Failed to update ${_tableName.slice(0, -1)}: ${response.message}`);
+                alert(`Failed to add ${this.lookupType.replace('_', ' ')}: ${response.message}`);
             }
         } catch (error) {
-            console.error(`edit-lookup-logic.js: Error saving edited ${_tableName.slice(0, -1)}:`, error);
-            alert(`Error saving edited ${_tableName.slice(0, -1)}: ${error.message || 'An unexpected error occurred.'}`);
+            console.error(`Error adding new ${this.lookupType.replace('_', ' ')}:`, error);
+            alert(`Error adding new ${this.lookupType.replace('_', ' ')}: ${error.message || 'An unexpected error occurred.'}`);
         } finally {
             hideLoading();
         }
     }
 
-    // Return the public interface for this specific instance
-    return {
-        toggleState: toggleControlStates // This method is now tied to this instance's scope
-    };
+    showEditInput(itemId, currentName) {
+        if (this.editInputContainer) {
+            this.editInputContainer.classList.remove('hidden');
+        }
+        if (this.editNameInput) {
+            this.editNameInput.value = currentName;
+            this.editNameInput.dataset.editingId = itemId; // Store ID being edited
+            this.editNameInput.focus();
+        }
+        // Hide new input if 'Edit' is shown
+        if (this.newContainer) {
+            this.newContainer.classList.add('hidden');
+        }
+    }
+
+    hideEditInput() {
+        if (this.editInputContainer) {
+            this.editInputContainer.classList.add('hidden');
+        }
+        if (this.editNameInput) {
+            this.editNameInput.value = '';
+            delete this.editNameInput.dataset.editingId;
+        }
+        this.populateFunction(this.selectElement.value, this.selectElement.value); // Re-populate to restore selected value
+    }
+
+    async saveEditedItem() {
+        const editedName = this.editNameInput.value.trim();
+        const itemId = this.editNameInput.dataset.editingId;
+        
+        if (!editedName) {
+            alert(`Please enter a name for the ${this.lookupType.replace('_', ' ')}.`);
+            return;
+        }
+        if (!itemId) {
+            alert('No item selected for editing.');
+            return;
+        }
+
+        // Special handling for house models to include rooms/features if they were edited
+        let roomsData = null;
+        let featuresData = null;
+        if (this.lookupType === 'house_models') {
+             // ********** CRITICAL DEBUG STEP **********
+             // getHouseModelDetailsData is currently commented out in house-model-logic.js
+             // and house-model-details-logic.js is renamed. So we can't call this.
+             // Re-enable this when house-model-details-logic.js is restored.
+            // if (typeof getHouseModelDetailsData !== 'undefined') {
+            //     const details = getHouseModelDetailsData();
+            //     roomsData = JSON.stringify(details.rooms);
+            //     featuresData = JSON.stringify(details.features);
+            // } else {
+            //     console.warn("getHouseModelDetailsData is not available. Updating house model without details.");
+            // }
+            // *******************************************
+        }
+
+        showLoading();
+        try {
+            const response = await window.api.updateLookupItem(this.lookupType, Number(itemId), editedName, roomsData, featuresData);
+            if (response.success) {
+                alert(response.message);
+                this.hideEditInput(); // This will also refresh the dropdown
+                await this.populateFunction(this.selectElement.value, Number(itemId)); // Refresh dropdown and re-select edited item
+            } else {
+                alert(`Failed to update ${this.lookupType.replace('_', ' ')}: ${response.message}`);
+            }
+        } catch (error) {
+            console.error(`Error updating ${this.lookupType.replace('_', ' ')}:`, error);
+            alert(`Error updating ${this.lookupType.replace('_', ' ')}: ${error.message || 'An unexpected error occurred.'}`);
+        } finally {
+            hideLoading();
+        }
+    }
+}
+
+/**
+ * Factory function to create and return an instance of EditLookupController.
+ * This is the public interface for other modules to use this functionality.
+ * @param {object} elements Object containing references to relevant DOM elements.
+ * @param {string} lookupType The type of lookup item (e.g., 'locations', 'developments', 'builders', 'house_models').
+ * @param {function} populateFunction The function from the calling module to refresh its dropdown.
+ * @param {function} refreshParentDropdown Optional: Function to refresh parent dropdown (e.g. for development linking to location).
+ * @returns {EditLookupController} An instance of the controller.
+ */
+export function initEditLookup(elements, lookupType, populateFunction, refreshParentDropdown = null) {
+    console.log(`edit-lookup-logic.js: initEditLookup for ${lookupType}. Initial select value: '${elements.selectElement ? elements.selectElement.value : ''}', options count: ${elements.selectElement ? elements.selectElement.options.length : 0}`);
+    return new EditLookupController(elements, lookupType, populateFunction, refreshParentDropdown);
 }

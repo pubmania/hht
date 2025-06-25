@@ -1,20 +1,13 @@
 // renderer/js/cost-logic.js
 
-import { calculateStampDuty, filterNumericInput } from './utils.js';
-
-// DOM Element References (these will be passed from form-main.js)
 let costValueField;
 let costRangeField;
 let costValueInput;
 let minCostInput;
 let maxCostInput;
 let stampDutyInput;
-let costKnownRadios; // The radio button group (NodeList)
+let costKnownRadios;
 
-/**
- * Initializes the cost-related DOM elements.
- * @param {object} elements Object containing references to relevant DOM elements.
- */
 export function initCostLogic(elements) {
     costValueField = elements.costValueField;
     costRangeField = elements.costRangeField;
@@ -24,144 +17,96 @@ export function initCostLogic(elements) {
     stampDutyInput = elements.stampDutyInput;
     costKnownRadios = elements.costKnownRadios;
 
-    // Attach event listeners
     costKnownRadios.forEach(radio => {
-        radio.addEventListener("change", toggleCostFieldsDisplay);
+        radio.addEventListener('change', toggleCostFields);
     });
 
-    costValueInput.addEventListener("input", filterNumericInput);
-    costValueInput.addEventListener("input", updateStampDuty); // Call updateStampDuty after filterNumericInput
-
-    minCostInput.addEventListener("input", filterNumericInput);
-    minCostInput.addEventListener("input", updateStampDuty); // Call updateStampDuty after filterNumericInput
-
-    maxCostInput.addEventListener("input", filterNumericInput);
-    maxCostInput.addEventListener("input", updateStampDuty); // Call updateStampDuty after filterNumericInput
-
-    // Initial setup
-    toggleCostFieldsDisplay();
+    // Initial state setup based on default checked radio or first one
+    toggleCostFields(); 
 }
 
-/**
- * Updates the calculated stamp duty field based on current cost inputs.
- */
-export function updateStampDuty() {
-    const isCostKnown = costKnownRadios.value === "yes";
+function toggleCostFields() {
+    const selectedCostKnownRadio = document.querySelector('input[name="cost_known"]:checked');
+    const isCostKnown = selectedCostKnownRadio && selectedCostKnownRadio.value === 'yes';
 
     if (isCostKnown) {
-        const cost = parseFloat(costValueInput.value);
-        if (!isNaN(cost) && cost >= 0) {
-            stampDutyInput.value = `£${calculateStampDuty(cost).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        } else {
-            stampDutyInput.value = '';
-        }
-    } else { // Cost is not known, use min/max range
-        const minCost = parseFloat(minCostInput.value);
-        const maxCost = parseFloat(maxCostInput.value);
-
-        if (!isNaN(minCost) && !isNaN(maxCost) && minCost >= 0 && maxCost >= 0) {
-            let actualMin = Math.min(minCost, maxCost);
-            let actualMax = Math.max(minCost, maxCost);
-
-            const minDuty = calculateStampDuty(actualMin);
-            const maxDuty = calculateStampDuty(actualMax);
-
-            const formattedMinDuty = minDuty.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            const formattedMaxDuty = maxDuty.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-            if (minDuty === maxDuty) {
-                stampDutyInput.value = `£${formattedMinDuty}`;
-            } else {
-                stampDutyInput.value = `£${formattedMinDuty} - £${formattedMaxDuty}`;
-            }
-        } else if (!isNaN(minCost) && minCost >= 0) { // Only min cost entered
-            stampDutyInput.value = `£${calculateStampDuty(minCost).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        } else if (!isNaN(maxCost) && maxCost >= 0) { // Only max cost entered
-            stampDutyInput.value = `£${calculateStampDuty(maxCost).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        } else {
-            stampDutyInput.value = ''; // Clear if inputs are invalid or incomplete
-        }
-    }
-}
-
-/**
- * Toggles the display of either the single cost input field or the min/max range fields.
- */
-export function toggleCostFieldsDisplay() {
-    const isCostKnown = costKnownRadios.value === "yes";
-    if (isCostKnown) {
-        costValueField.style.display = "block";
-        costRangeField.style.display = "none";
-        minCostInput.value = ''; // Clear range inputs when switching to known cost
+        costValueField.classList.remove('hidden');
+        costRangeField.classList.add('hidden');
+        costValueInput.required = true;
+        minCostInput.required = false;
+        maxCostInput.required = false;
+        minCostInput.value = ''; // Clear range fields if switching to known
         maxCostInput.value = '';
     } else {
-        costValueField.style.display = "none";
-        costRangeField.style.display = "block";
-        costValueInput.value = ''; // Clear known cost input when switching to range
+        costValueField.classList.add('hidden');
+        costRangeField.classList.remove('hidden');
+        costValueInput.required = false;
+        minCostInput.required = false; 
+        maxCostInput.required = false; 
+        costValueInput.value = ''; // Clear value field if switching to range
     }
-    updateStampDuty(); // Always update stamp duty after changing field visibility
 }
 
 /**
- * Sets the initial values for the cost fields (for edit mode).
- * @param {object} plot The plot object from the database.
+ * Sets the cost fields on the form when editing a plot.
+ * @param {object} plot The plot data object.
  */
 export function setCostFields(plot) {
-    if (plot.cost_known === 1) { // 1 for true
-        costKnownRadios.value = "yes";
-        costValueInput.value = plot.cost_value;
-    } else {
-        costKnownRadios.value = "no";
-        if (plot.cost_range) {
-            const rangeParts = plot.cost_range.split(' - ').map(s => s.trim());
-            if (rangeParts.length === 2) {
-                minCostInput.value = rangeParts[0];
-                maxCostInput.value = rangeParts[1];
-            } else if (rangeParts.length === 1) {
-                minCostInput.value = rangeParts[0];
-                maxCostInput.value = ''; // Or set max to min if preferred
-            }
-        } else {
-            minCostInput.value = '';
-            maxCostInput.value = '';
-        }
+    console.log("cost-logic.js: setCostFields called with plot:", plot);
+    
+    // Set the correct radio button based on plot.cost_known
+    if (plot.cost_known == 1) { // If cost is known
+        document.getElementById('cost_known_yes').checked = true;
+        costValueInput.value = plot.cost_value || '';
+        minCostInput.value = ''; // Ensure these are cleared if known cost is selected
+        maxCostInput.value = '';
+    } else { // If cost is a range
+        document.getElementById('cost_known_no').checked = true;
+        costValueInput.value = ''; // Ensure this is cleared if range cost is selected
+
+        // Directly assign min_cost and max_cost from the plot object
+        // They will be null or numbers from the database
+        minCostInput.value = plot.min_cost || ''; 
+        maxCostInput.value = plot.max_cost || ''; 
+        
+        console.log("cost-logic.js: setCostFields - Loaded min_cost:", plot.min_cost, "max_cost:", plot.max_cost);
     }
-    toggleCostFieldsDisplay(); // Ensure correct fields are visible
-    stampDutyInput.value = plot.stamp_duty || ''; // Set stamp duty from DB
+    
+    // Trigger toggleCostFields to ensure visibility is correct
+    // based on the newly set radio button.
+    toggleCostFields(); 
+
+    // Assign stamp_duty as a string directly (no parsing needed)
+    stampDutyInput.value = plot.stamp_duty || '';
+    console.log("cost-logic.js: setCostFields - Stamp Duty set to:", plot.stamp_duty);
 }
 
-/**
- * Gathers and returns cost-related data from the form inputs.
- * @param {FormData} formData The FormData object from the form.
- * @returns {object} An object containing cost_known, cost_value, cost_range, and stamp_duty.
- */
-export function getCostData(formData) {
-    const costKnown = formData.get("cost_known") === "yes";
-    let costValueToSend = null;
-    let costRangeToSend = null;
-    
-    if (costKnown) {
-        costValueToSend = parseFloat(formData.get("cost_value") || 0);
+export function getCostData(elements) {
+    const isCostKnown = elements.isCostKnown;
+    let costValue = null;
+    let minCost = null; // Will now be separate
+    let maxCost = null; // Will now be separate
+
+    if (isCostKnown) {
+        costValue = parseFloat(elements.costValue);
+        if (isNaN(costValue)) costValue = null;
     } else {
-        const min = parseFloat(formData.get("min_cost"));
-        const max = parseFloat(formData.get("max_cost"));
-        
-        if (!isNaN(min) && !isNaN(max)) {
-            costRangeToSend = `${Math.min(min, max)} - ${Math.max(min, max)}`;
-        } else if (!isNaN(min)) {
-            costRangeToSend = `${min}`;
-        } else if (!isNaN(max)) {
-            costRangeToSend = `${max}`;
-        }
+        // Get values from the respective input fields directly as numbers
+        minCost = parseFloat(elements.minCost);
+        maxCost = parseFloat(elements.maxCost);
+
+        // Ensure they are null if not valid numbers
+        if (isNaN(minCost)) minCost = null;
+        if (isNaN(maxCost)) maxCost = null;
     }
-    
-    // Get the currently displayed stamp duty value, which is dynamically calculated
-    const stampDuty = stampDutyInput.value; 
+
+    // Do NOT parseFloat for stampDuty, pass as string
+    const stampDuty = elements.stampDuty; 
 
     return {
-        cost_known: costKnown,
-        cost_value: costValueToSend,
-        cost_range: costRangeToSend,
+        cost_value: costValue,
+        min_cost: minCost,   // New: Pass min_cost
+        max_cost: maxCost,   // New: Pass max_cost
         stamp_duty: stampDuty
     };
 }

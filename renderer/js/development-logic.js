@@ -38,10 +38,13 @@ export function initDevelopmentLogic(elements) {
 export async function populateDevelopments(locationId, selectedDevelopmentId = null) {
     developmentSelect.disabled = true; // Disable until loaded or if no location
     addNewDevelopmentBtn.disabled = true; // Disable add button as well
+   // alert('Populating developments...'); // Optional: Notify user
     developmentSelect.innerHTML = '<option value="">Select Development</option>'; // Clear existing
+    //alert('Setting development innerhtml');
 
     if (!locationId) {
         // No location selected, so no developments to show
+      //  alert('No location selected, so no developments to show');
         hideLoading(); // Ensure loading is hidden if called without location
         return;
     }
@@ -49,12 +52,14 @@ export async function populateDevelopments(locationId, selectedDevelopmentId = n
     showLoading();
     try {
         const developments = await window.api.getDevelopmentsByLocation(Number(locationId));
+        //alert('Before calling populateDropdown developmentSelect');
         populateDropdown(developmentSelect, developments, 'Select Development', selectedDevelopmentId);
+        //alert('After calling populateDropdown developmentSelect');
         developmentSelect.disabled = false; // Enable once populated
         addNewDevelopmentBtn.disabled = false; // Enable add button
     } catch (error) {
         console.error('development-logic.js: Error populating developments:', error);
-        alert(`Error loading developments: ${error.message}`);
+        //alert(`Error loading developments: ${error.message}`);
     } finally {
         hideLoading();
     }
