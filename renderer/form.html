@@ -1,204 +1,185 @@
+<!-- hht/renderer/form.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Add/Edit Plot</title>
-  <link rel="stylesheet" href="styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add/Edit Plot</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="loadingOverlay" class="loading-overlay hidden">
-    <div class="spinner"></div>
-  </div>
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
 
-  <div class="form-container">
-    <h1 id="formTitle">Add/Edit Plot</h1>
-    <form id="plotForm">
-      <input type="hidden" id="editEntryId" value="">
+    <div class="form-container">
+        <h1 id="formTitle">Add Plot</h1>
+        <form id="plotForm">
+            <label for="plot_number">Plot Number:</label>
+            <input type="text" id="plot_number" required>
 
-      <label for="plot_number">Plot Number:</label>
-      <input type="text" name="plot_number" id="plot_number" required><br/>
+            <label for="entrance_facing">Entrance Facing:</label>
+            <select id="entrance_facing" required>
+                <option value="">Select Direction</option>
+                <option value="North">North</option>
+                <option value="South">South</option>
+                <option value="East">East</option>
+                <option value="West">West</option>
+                <option value="North East">North East</option>
+                <option value="North West">North West</option>
+                <option value="South East">South East</option>
+                <option value="South West">South West</option>
+            </select>
 
-      <label for="entrance_facing">Facing:</label>
-      <select name="entrance_facing" id="entrance_facing">
-        <option value="">Select Direction</option>
-        <option>North</option>
-        <option>South</option>
-        <option>East</option>
-        <option value="West">West</option>
-        <option value="North East">North East</option>
-        <option value="East North">East North</option>
-        <option value="East South">East South</option>
-        <option value="South East">South East</option>
-        <option value="South West">South West</option>
-        <option value="West South">West South</option>
-        <option value="North West">North West</option>
-      </select><br/>
+            <label>Cost Known:</label>
+            <div class="radio-group">
+                <label>
+                    <input type="radio" name="cost_known" id="cost_known_yes" value="yes" checked> Yes
+                </label>
+                <label>
+                    <input type="radio" name="cost_known" id="cost_known_no" value="no"> No (Range)
+                </label>
+            </div>
 
-      <label>Cost Known:</label>
-      <div class="radio-group">
-        <label><input type="radio" name="cost_known" value="yes" id="cost_known_yes"> Yes</label>
-        <label><input type="radio" name="cost_known" value="no" checked id="cost_known_no"> No</label>
-      </div>
+            <div id="costValueField">
+                <label for="cost_value">Known Cost:</label>
+                <input type="number" id="cost_value" placeholder="e.g., 350000">
+            </div>
 
-      <div id="costValueField" style="display:none;">
-        <label for="cost_value">Cost (£):</label>
-        <input type="text" name="cost_value" id="cost_value"><br/>
-      </div>
+            <div id="costRangeField" class="hidden">
+                <label for="min_cost">Min Cost:</label>
+                <input type="number" id="min_cost" placeholder="e.g., 300000">
+                <label for="max_cost">Max Cost:</label>
+                <input type="number" id="max_cost" placeholder="e.g., 400000">
+            </div>
 
-      <div id="costRangeField">
-        <label for="min_cost">Min Cost (£):</label>
-        <input type="text" name="min_cost" id="min_cost"><br/>
-        <label for="max_cost">Max Cost (£):</label>
-        <input type="text" name="max_cost" id="max_cost"><br/>
-      </div>
-      
-      <label for="stamp_duty">Calculated Stamp Duty:</label>
-      <input type="text" name="stamp_duty" id="stamp_duty" readonly style="background-color: #eee; cursor: not-allowed;"><br/>
+            <label for="stamp_duty">Stamp Duty:</label>
+            <!--<input type="text" id="stamp_duty" placeholder="e.g., £7,500.00 or £5,000.00 - £7,500.00">-->
+            <input type="text" name="stamp_duty" id="stamp_duty" readonly style="background-color: #eee; cursor: not-allowed;"><br/>
 
-      <div>
-        <label for="location_select">Location:</label>
-        <div class="field-with-add-button">
-          <select name="location_id" id="location_select" required>
-            <option value="">Select Location</option>
-          </select>
-          <button type="button" id="addNewLocationBtn" class="add-new-btn">+</button>
-        </div>
-        <!-- NEW EDIT FIELD FOR LOCATION -->
-        <div id="editLocationInputContainer" class="edit-item-input-container hidden">
-          <input type="text" id="editLocationName" placeholder="Edit Location Name" class="edit-item-input">
-          <button type="button" id="saveLocationBtn" class="edit-item-save-btn">Save</button>
-          <button type="button" id="cancelLocationBtn" class="edit-item-cancel-btn">X</button>
-        </div>
-        <div id="newLocationInputContainer" class="new-item-input-container hidden">
-          <input type="text" id="newLocationName" placeholder="New Location Name" class="new-item-input">
-          <button type="button" id="saveNewLocationBtn" class="new-item-save-btn">Add</button>
-          <button type="button" id="cancelNewLocationBtn" class="new-item-cancel-btn">X</button>
-        </div>
-        <!-- END NEW EDIT FIELD -->
-      </div>
+            <h2 class="section-title">Location & Development</h2>
+            <label for="location_select">Location:</label>
+            <div class="field-with-add-button">
+                <select id="location_select" required></select>
+                <button type="button" id="addNewLocationBtn" class="add-new-btn">Add New</button>
+            </div>
+            <div id="newLocationInputContainer" class="new-item-input-container hidden">
+                <input type="text" id="newLocationName" class="new-item-input" placeholder="New Location Name">
+                <button type="button" id="saveNewLocationBtn" class="new-item-save-btn">Save</button>
+                <button type="button" id="cancelNewLocationBtn" class="new-item-cancel-btn">X</button>
+            </div>
+            <div id="editLocationInputContainer" class="edit-item-input-container hidden">
+                <input type="text" id="editLocationName" class="edit-item-input" placeholder="Edit Location Name">
+                <button type="button" id="saveLocationBtn" class="edit-item-save-btn">Save</button>
+                <button type="button" id="cancelLocationBtn" class="edit-item-cancel-btn">X</button>
+            </div>
+            
+            <label for="development_select">Development:</label>
+            <div class="field-with-add-button">
+                <select id="development_select" required></select>
+                <button type="button" id="addNewDevelopmentBtn" class="add-new-btn">Add New</button>
+            </div>
+            <div id="newDevelopmentInputContainer" class="new-item-input-container hidden">
+                <input type="text" id="newDevelopmentName" class="new-item-input" placeholder="New Development Name">
+                <button type="button" id="saveNewDevelopmentBtn" class="new-item-save-btn">Save</button>
+                <button type="button" id="cancelNewDevelopmentBtn" class="new-item-cancel-btn">X</button>
+            </div>
+            <div id="editDevelopmentInputContainer" class="edit-item-input-container hidden">
+                <input type="text" id="editDevelopmentName" class="edit-item-input" placeholder="Edit Development Name">
+                <button type="button" id="saveDevelopmentBtn" class="edit-item-save-btn">Save</button>
+                <button type="button" id="cancelDevelopmentBtn" class="edit-item-cancel-btn">X</button>
+            </div>
 
-      <div>
-        <label for="development_select">Development:</label>
-        <div class="field-with-add-button">
-          <select name="development_id" id="development_select" required disabled>
-            <option value="">Select Development</option>
-          </select>
-          <button type="button" id="addNewDevelopmentBtn" class="add-new-btn" disabled>+</button>
-        </div>
-        <!-- NEW EDIT FIELD FOR DEVELOPMENT -->
-        <div id="editDevelopmentInputContainer" class="edit-item-input-container hidden">
-          <input type="text" id="editDevelopmentName" placeholder="Edit Development Name" class="edit-item-input">
-          <button type="button" id="saveDevelopmentBtn" class="edit-item-save-btn">Save</button>
-          <button type="button" id="cancelDevelopmentBtn" class="edit-item-cancel-btn">X</button>
-        </div>
-        <div id="newDevelopmentInputContainer" class="new-item-input-container hidden">
-          <input type="text" id="newDevelopmentName" placeholder="New Development Name" class="new-item-input">
-          <button type="button" id="saveNewDevelopmentBtn" class="new-item-save-btn">Add</button>
-          <button type="button" id="cancelNewDevelopmentBtn" class="new-item-cancel-btn">X</button>
-        </div>
-        <!-- END NEW EDIT FIELD -->
-      </div>
 
-      <div>
-        <label for="builder_select">Builder:</label>
-        <div class="field-with-add-button">
-          <select name="builder_id" id="builder_select" required disabled>
-            <option value="">Select Builder</option>
-          </select>
-          <button type="button" id="addNewBuilderBtn" class="add-new-btn" disabled>+</button>
-        </div>
-        <!-- NEW EDIT FIELD FOR BUILDER -->
-        <div id="editBuilderInputContainer" class="edit-item-input-container hidden">
-          <input type="text" id="editBuilderName" placeholder="Edit Builder Name" class="edit-item-input">
-          <button type="button" id="saveBuilderBtn" class="edit-item-save-btn">Save</button>
-          <button type="button" id="cancelBuilderBtn" class="edit-item-cancel-btn">X</button>
-        </div>
-        <div id="newBuilderInputContainer" class="new-item-input-container hidden">
-          <input type="text" id="newBuilderName" placeholder="New Builder Name" class="new-item-input">
-          <button type="button" id="saveNewBuilderBtn" class="new-item-save-btn">Add</button>
-          <button type="button" id="cancelNewBuilderBtn" class="new-item-cancel-btn">X</button>
-        </div>
-        <div id="linkBuilderToDevelopmentContainer" class="new-item-input-container hidden">
-            <label for="existingBuilderSelect" style="display:block; margin-bottom: 5px; font-weight: normal;">Link Existing Builder:</label>
-            <select id="existingBuilderSelect" class="new-item-input" style="flex-grow: 1;">
-                <option value="">Select Builder to Link</option>
-            </select>
-            <button type="button" id="saveLinkBuilderBtn" class="new-item-save-btn">Link</button>
-            <button type="button" id="cancelLinkBuilderBtn" class="new-item-cancel-btn">X</button>
-        </div>
-        <!-- END NEW EDIT FIELD -->
-      </div>
+            <h2 class="section-title">Builder & House Model</h2>
+            <label for="builder_select">Builder:</label>
+            <div class="field-with-add-button">
+                <select id="builder_select" required></select>
+                <button type="button" id="addNewBuilderBtn" class="add-new-btn">Add New</button>
+            </div>
+            <div id="newBuilderInputContainer" class="new-item-input-container hidden">
+                <input type="text" id="newBuilderName" class="new-item-input" placeholder="New Builder Name">
+                <button type="button" id="saveNewBuilderBtn" class="new-item-save-btn">Save</button>
+                <button type="button" id="cancelNewBuilderBtn" class="new-item-cancel-btn">X</button>
+            </div>
+            <div id="editBuilderInputContainer" class="edit-item-input-container hidden">
+                <input type="text" id="editBuilderName" class="edit-item-input" placeholder="Edit Builder Name">
+                <button type="button" id="saveBuilderBtn" class="edit-item-save-btn">Save</button>
+                <button type="button" id="cancelBuilderBtn" class="edit-item-cancel-btn">X</button>
+            </div>
+            <div id="linkBuilderToDevelopmentContainer" class="new-item-input-container hidden">
+                <label for="existingBuilderSelect" style="margin-top: 0;">Link Existing Builder:</label>
+                <select id="existingBuilderSelect" class="new-item-input" style="width: auto; flex-grow: 1;"></select>
+                <button type="button" id="saveLinkBuilderBtn" class="new-item-save-btn">Link</button>
+                <button type="button" id="cancelLinkBuilderBtn" class="new-item-cancel-btn">X</button>
+            </div>
 
-      <div>
-        <label for="house_model_select">House Model:</label>
-        <div class="field-with-add-button">
-          <select name="house_model_id" id="house_model_select" required disabled>
-            <option value="">Select House Model</option>
-          </select>
-          <button type="button" id="addNewHouseModelBtn" class="add-new-btn" disabled>+</button>
-        </div>
-        <!-- NEW EDIT FIELD FOR HOUSE MODEL -->
-        <div id="editHouseModelInputContainer" class="edit-item-input-container hidden">
-          <input type="text" id="editHouseModelName" placeholder="Edit House Model Name" class="edit-item-input">
-          <button type="button" id="saveHouseModelBtn" class="edit-item-save-btn">Save</button>
-          <button type="button" id="cancelHouseModelBtn" class="edit-item-cancel-btn">X</button>
-        </div>
-        <div id="newHouseModelInputContainer" class="new-item-input-container hidden">
-          <input type="text" id="newHouseModelName" placeholder="New House Model Name" class="new-item-input">
-          <button type="button" id="saveNewHouseModelBtn" class="new-item-save-btn">Add</button>
-          <button type="button" id="cancelNewHouseModelBtn" class="new-item-cancel-btn">X</button>
-        </div>
-        <!-- END NEW EDIT FIELD -->
-      </div>
+            <label for="house_model_select">House Model:</label>
+            <div class="field-with-add-button">
+                <select id="house_model_select" required></select>
+                <button type="button" id="addNewHouseModelBtn" class="add-new-btn">Add New</button>
+            </div>
+            <div id="newHouseModelInputContainer" class="new-item-input-container hidden">
+                <input type="text" id="newHouseModelName" class="new-item-input" placeholder="New House Model Name">
+                <button type="button" id="saveNewHouseModelBtn" class="new-item-save-btn">Save</button>
+                <button type="button" id="cancelNewHouseModelBtn" class="new-item-cancel-btn">X</button>
+            </div>
+            <div id="editHouseModelInputContainer" class="edit-item-input-container hidden">
+                <input type="text" id="editHouseModelName" class="edit-item-input" placeholder="Edit House Model Name">
+                <button type="button" id="saveHouseModelBtn" class="edit-item-save-btn">Save</button>
+                <button type="button" id="cancelHouseModelBtn" class="edit-item-cancel-btn">X</button>
+            </div>
 
-      <!-- "Edit Details" button on the main form will open the modal -->
-      <div class="field-group" id="houseModelDetailsSectionButtons">
-        <label>House Model Details:</label>
-        <button type="button" id="editModelDetailsBtn" class="action-button-secondary ml-3 hidden">Edit Details</button>
-      </div>
+            <!-- ********** NEW: Container for House Model Read-Only Details ********** -->
+            <div id="houseModelSummaryDisplay" class="house-model-summary-display hidden">
+                <h3 class="summary-title">House Model Details:</h3>
+                <div id="summaryRooms" class="summary-section"></div>
+                <div id="summaryFeatures" class="summary-section"></div>
+            </div>
+            <!-- ************************************************************************ -->
 
-      <div class="form-actions">
-        <button type="submit" id="submitButton" class="action-button-primary">Save</button>
-        <button type="button" id="cancelButton" class="action-button-secondary" onclick="window.location.href='index.html'">Cancel</button>
-      </div>
-    </form>
-  </div>
+            <div id="houseModelDetailsSectionButtons" class="house-model-details-section-buttons hidden">
+                <label>House Model Rooms & Features:</label>
+                <button type="button" id="editModelDetailsBtn" class="action-button-primary">Edit Details</button>
+            </div>
 
-  <!-- MODAL FOR HOUSE MODEL DETAILS -->
-  <div id="houseModelDetailsModal" class="modal-overlay hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 class="modal-title">House Model Details</h2>
-        <button type="button" id="closeModelDetailsModalBtn" class="modal-close-button">&times;</button>
-      </div>
-      <div class="modal-body">
-        <div id="houseModelDetailsSection" class="house-model-details-modal-inner">
-          <!-- Buttons moved inside the modal for its own save/cancel -->
-          <div class="house-model-details-actions flex gap-3 mt-3 mb-4">
-              <button type="button" id="saveModelDetailsBtn" class="action-button-primary">Save Details</button>
-              <button type="button" id="cancelModelDetailsBtn" class="action-button-secondary">Cancel Edit</button>
-          </div>
+            <div class="form-actions">
+                <button type="submit" id="submitButton" class="action-button-primary">Save</button>
+                <button type="button" id="cancelButton" class="action-button-secondary" onclick="window.location.href='index.html'">Cancel</button>
+            </div>
+        </form>
+    </div>
 
-          <div class="field-group">
-              <label>Rooms:</label>
-              <div id="roomsContainer" class="grid-container">
-                  <!-- Rooms will be dynamically generated here -->
-              </div>
-          </div>
-
-          <div class="field-group">
-              <label>Features:</label>
-              <div id="featuresContainer" class="grid-container">
-                  <!-- Features will be dynamically generated here -->
-              </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- END MODAL -->
-
-  <script type="module" src="js/form-main.js"></script>
+    <!-- House Model Details Modal (Already exists) -->
+    <div id="houseModelDetailsModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Edit House Model Details</h2>
+                <button type="button" class="modal-close-button" id="closeModelDetailsModalBtn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="field-group">
+                    <label>Rooms:</label>
+                    <div id="roomsContainer" class="grid-container">
+                        <!-- Room inputs will be dynamically added here -->
+                    </div>
+                    <button type="button" id="addRoomBtn" class="add-new-btn">Add Room</button>
+                </div>
+                <div class="field-group">
+                    <label>Features:</label>
+                    <div id="featuresContainer" class="grid-container">
+                        <!-- Feature inputs will be dynamically added here -->
+                    </div>
+                    <button type="button" id="addFeatureBtn" class="add-new-btn">Add Feature</button>
+                </div>
+            </div>
+            <div class="house-model-details-actions">
+                <button type="button" id="saveModelDetailsBtn" class="action-button-primary">Save Details</button>
+                <button type="button" id="cancelModelDetailsBtn" class="action-button-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module" src="./js/form-main.js"></script>
 </body>
 </html>

@@ -6,8 +6,7 @@ import { initLocationLogic, populateLocations, getLocationData } from './locatio
 import { initDevelopmentLogic, populateDevelopments, getDevelopmentData } from './development-logic.js';
 import { initBuilderLogic, populateBuilders, getBuilderData } from './builder-logic.js';
 import { initHouseModelLogic, populateHouseModels, getHouseModelData } from './house-model-logic.js';
-// ********** RE-ENABLE THIS IMPORT **********
-import { displayAndSetEditable } from './house-model-details-logic.js'; 
+import { showHouseModelSummaryAndButton } from './house-model-details-logic.js'; 
 
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -180,8 +179,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         populateBuilders(null);
         houseModelSelect.value = '';
         populateHouseModels(null);
-        // ********** RE-ENABLE THIS CALL **********
-        displayAndSetEditable(null, null, null, false); 
+        showHouseModelSummaryAndButton(null, null, null); 
     });
 
     developmentSelect.addEventListener('change', async () => {
@@ -190,16 +188,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         builderSelect.value = '';
         houseModelSelect.value = '';
         populateHouseModels(null);
-        // ********** RE-ENABLE THIS CALL **********
-        displayAndSetEditable(null, null, null, false); 
+        showHouseModelSummaryAndButton(null, null, null); 
     });
 
     builderSelect.addEventListener('change', async () => {
         const selectedBuilderId = builderSelect.value;
         await populateHouseModels(selectedBuilderId);
         houseModelSelect.value = '';
-        // ********** RE-ENABLE THIS CALL **********
-        displayAndSetEditable(null, null, null, false); 
+        showHouseModelSummaryAndButton(null, null, null); 
     });
 
 
@@ -216,13 +212,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log(`form-main.js: Attempting to fetch plot with ID: ${id}`);
         try {
             const plot = await window.api.getPlotById(Number(id));
-            console.log('form-main.js: Fetched plot:', plot); 
-
+            console.log('form-main.js: Fetched plot data:', plot); 
+            
             if (plot) {
+                console.log('form-main.js: Populating form fields with plot data...');
+                console.log('  Setting plot_number:', plot.plot_number);
                 plotNumberInput.value = plot.plot_number;
+                
+                console.log('  Setting entrance_facing:', plot.entrance_facing);
                 entranceFacingSelect.value = plot.entrance_facing;
                 
-                // Keep this re-enabled.
+                console.log('  Calling setCostFields with plot:', plot);
                 setCostFields(plot); 
                 
                 console.log("form-main.js: Populating Locations with plot.location_id:", plot.location_id);
@@ -237,21 +237,22 @@ document.addEventListener("DOMContentLoaded", async () => {
                         if (plot.builder_id) {
                             console.log("form-main.js: Populating House Models with plot.builder_id:", plot.builder_id, "and plot.house_model_id:", plot.house_model_id);
                             await populateHouseModels(plot.builder_id, plot.house_model_id);
-                            // ********** RE-ENABLE THIS CALL **********
-                            displayAndSetEditable(plot.house_model_id, plot.rooms_data, plot.features_data, false); 
+                            console.log('form-main.js: Calling showHouseModelSummaryAndButton with model:', plot.house_model_id, 'rooms:', plot.rooms_data, 'features:', plot.features_data);
+                            showHouseModelSummaryAndButton(plot.house_model_id, plot.rooms_data, plot.features_data); 
                         }
                     }
                 }
 
+                console.log('  Setting stamp_duty:', plot.stamp_duty);
                 stampDutyInput.value = plot.stamp_duty || ''; 
 
             } else {
-                console.error(`form-main.js: Plot with ID ${id} not found.`);
+                console.error(`form-main.js: Plot with ID ${id} not found or data is empty.`);
                 alert(`Error: Plot with ID ${id} not found.`);
                 window.location.href = "index.html"; 
             }
         } catch (error) {
-            console.error('form-main.js: Error fetching plot by ID:', error);
+            console.error('form-main.js: Error fetching or populating plot by ID:', error);
             let alertMessage = `Error loading plot data: ${error.message}.`;
             alert(alertMessage + ` Please check console for details.`);
             window.location.href = "index.html"; 
@@ -265,8 +266,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log("form-main.js: Setting form title to 'Add Plot'");
         
         await populateLocations(); 
-        // ********** RE-ENABLE THIS CALL **********
-        displayAndSetEditable(null, null, null, false); 
+        showHouseModelSummaryAndButton(null, null, null); 
     }
 
     // --- Main Form Submission Handler ---
@@ -305,15 +305,19 @@ document.addEventListener("DOMContentLoaded", async () => {
              hideLoading();
              return;
         }
-        if (isCostKnown && (!costData.cost_value || isNaN(costData.cost_value))) {
+        if (isCostKnown && (costData.cost_value === null || isNaN(costData.cost_value))) { 
             alert('Please enter a valid Known Cost.');
             hideLoading();
             return;
         }
-        if (!isCostKnown && (!costData.minCost && !costData.maxCost)) { 
-            alert('Please enter a Min Cost, Max Cost, or both for the Cost Range.');
-            hideLoading();
-            return;
+        if (!isCostKnown) {
+            const hasMin = costData.min_cost !== null;
+            const hasMax = costData.max_cost !== null;
+            if (!hasMin && !hasMax) {
+                 alert('Please enter a Min Cost, Max Cost, or both for the Cost Range.');
+                 hideLoading();
+                 return;
+            }
         }
         if (!selectedLocationId || isNaN(Number(selectedLocationId))) {
              alert('Please select a Location.');
@@ -343,7 +347,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             
             cost_known: isCostKnown ? 1 : 0, 
             cost_value: costData.cost_value,
-            cost_range: costData.cost_range, 
+            min_cost: costData.min_cost,
+            max_cost: costData.max_cost,
             stamp_duty: costData.stamp_duty,
 
             location_id: Number(selectedLocationId),

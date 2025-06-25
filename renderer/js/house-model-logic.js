@@ -1,8 +1,8 @@
 // renderer/js/house-model-logic.js
 
 import { showLoading, hideLoading, populateDropdown } from './utils.js';
-// ********** RE-ENABLE THIS IMPORT **********
-import { displayAndSetEditable, getHouseModelDetailsData } from './house-model-details-logic.js'; 
+// ********** CORRECTED IMPORT: No more displayAndSetEditable **********
+import { showHouseModelSummaryAndButton, openNewHouseModelModalForDefinition, getHouseModelDetailsData } from './house-model-details-logic.js'; 
 import { initEditLookup } from './edit-lookup-logic.js'; 
 
 // DOM Element References (passed from form-main.js)
@@ -42,7 +42,6 @@ export function initHouseModelLogic(elements) {
     saveHouseModelBtn = elements.saveHouseModelBtn;
     cancelHouseModelBtn = elements.cancelHouseModelBtn;
 
-    // ***** DEBUG LOG: Check if editHouseModelInputContainer is found on init *****
     console.log("house-model-logic.js: initHouseModelLogic - editHouseModelInputContainer:", editHouseModelInputContainer);
 
 
@@ -65,7 +64,6 @@ export function initHouseModelLogic(elements) {
         cancelEditBtn: cancelHouseModelBtn
     }, 'house_models', populateHouseModels, populateHouseModels); 
 
-    // ***** DEBUG LOG: Check houseModelEditController after initEditLookup *****
     console.log("house-model-logic.js: initHouseModelLogic - houseModelEditController:", houseModelEditController);
     console.log("house-model-logic.js: initHouseModelLogic - houseModelEditController.editInputContainer:", houseModelEditController ? houseModelEditController.editInputContainer : 'N/A');
 
@@ -77,20 +75,20 @@ export function initHouseModelLogic(elements) {
             showLoading();
             try {
                 const modelData = await window.api.getHouseModelDetailsById(Number(selectedHouseModelId));
-                // ********** RE-ENABLE THIS CALL **********
-                displayAndSetEditable(Number(selectedHouseModelId), modelData.rooms_data, modelData.features_data, false); 
+                // ********** CALL showHouseModelSummaryAndButton **********
+                showHouseModelSummaryAndButton(Number(selectedHouseModelId), modelData.rooms_data, modelData.features_data); 
             } catch (error) {
                 console.error('house-model-logic.js: Error fetching house model details on selection:', error);
                 alert('Error loading house model details.');
-                // ********** RE-ENABLE THIS CALL **********
-                displayAndSetEditable(null, null, null, false); // Clear on error
+                // ********** CALL showHouseModelSummaryAndButton **********
+                showHouseModelSummaryAndButton(null, null, null); // Clear on error
             } finally {
                 hideLoading();
             }
         } else {
             // If no house model is selected, hide details and the 'Edit Details' button
-            // ********** RE-ENABLE THIS CALL **********
-            displayAndSetEditable(null, null, null, false);
+            // ********** CALL showHouseModelSummaryAndButton **********
+            showHouseModelSummaryAndButton(null, null, null);
         }
     });
 }
@@ -104,15 +102,13 @@ export async function populateHouseModels(builderId, selectedHouseModelId = null
     houseModelSelect.disabled = true;
     addNewHouseModelBtn.disabled = true;
     houseModelSelect.innerHTML = '<option value="">Select House Model</option>';
-    // ********** RE-ENABLE THIS CALL **********
-    displayAndSetEditable(null, null, null, false); 
+    // ********** CALL showHouseModelSummaryAndButton **********
+    showHouseModelSummaryAndButton(null, null, null); 
 
-    // ***** DEBUG LOG: Check houseModelEditController before the problematic line *****
     console.log("house-model-logic.js: populateHouseModels - houseModelEditController:", houseModelEditController);
     console.log("house-model-logic.js: populateHouseModels - houseModelEditController.editInputContainer:", houseModelEditController ? houseModelEditController.editInputContainer : 'N/A');
 
     if (houseModelEditController) { 
-        // This line should now work correctly after edit-lookup-logic.js fix
         houseModelEditController.editInputContainer.classList.add('hidden'); // Ensure edit input is hidden
     }
 
@@ -137,12 +133,12 @@ export async function populateHouseModels(builderId, selectedHouseModelId = null
         // If a model was selected (e.g., on plot load), display its details in read-only mode
         if (selectedHouseModelId && houseModels.some(model => model.id == selectedHouseModelId)) {
             const modelData = await window.api.getHouseModelDetailsById(Number(selectedHouseModelId));
-            // ********** RE-ENABLE THIS CALL **********
-            displayAndSetEditable(Number(selectedHouseModelId), modelData.rooms_data, modelData.features_data, false);
+            // ********** CALL showHouseModelSummaryAndButton **********
+            showHouseModelSummaryAndButton(Number(selectedHouseModelId), modelData.rooms_data, modelData.features_data);
         } else {
             // If no model is selected or the previously selected one is no longer valid, clear details
-            // ********** RE-ENABLE THIS CALL **********
-            displayAndSetEditable(null, null, null, false);
+            // ********** CALL showHouseModelSummaryAndButton **********
+            showHouseModelSummaryAndButton(null, null, null);
         }
 
     } catch (error) {
@@ -164,8 +160,8 @@ function showNewHouseModelInput() {
     newHouseModelNameInput.focus();
     newHouseModelNameInput.disabled = false;
     
-    // ********** RE-ENABLE THIS CALL **********
-    displayAndSetEditable(null, null, null, true); 
+    // ********** CORRECTED CALL **********
+    openNewHouseModelModalForDefinition(); 
 }
 
 /**
@@ -182,8 +178,8 @@ function hideNewHouseModelInput() {
     if (selectedHouseModelId) {
         populateHouseModels(builderSelect.value, selectedHouseModelId); 
     } else {
-        // ********** RE-ENABLE THIS CALL **********
-        displayAndSetEditable(null, null, null, false);
+        // ********** CORRECTED CALL **********
+        showHouseModelSummaryAndButton(null, null, null);
     }
 }
 
@@ -203,7 +199,6 @@ async function saveNewHouseModel() {
         return;
     }
 
-    // ********** RE-ENABLE THIS CALL **********
     const { rooms, features } = getHouseModelDetailsData();
 
     // Basic validation for rooms/features when adding a new model
@@ -217,9 +212,9 @@ async function saveNewHouseModel() {
         const roomsJson = JSON.stringify(rooms);
         const featuresJson = JSON.stringify(features);
 
-        // Call addLookupItem with roomsJson and featuresJson
+        // Call addLookupItem with roomsJson and featuresJson for now
         const response = await window.api.addLookupItem(
-            'house_models', newHouseModelName, Number(selectedBuilderId), roomsJson, featuresJson
+            'house_models', newHouseModelName, Number(selectedBuilderId), roomsJson, featuresJson 
         );
         if (response.success) {
             alert(response.message);
