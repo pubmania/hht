@@ -1,32 +1,65 @@
 // renderer/js/house-model-details-logic.js
 
+import { showLoading, hideLoading } from './utils.js';
+
 let houseModelDetailsModal;
 let closeModelDetailsModalBtn;
 let roomsContainer;
 let featuresContainer;
 let saveModelDetailsBtn;
 let cancelModelDetailsBtn;
-let houseModelDetailsSectionButtons; // The div on the main form containing the Edit Details button
-let editModelDetailsBtn; // The actual button on the main form
+// 'addRoomBtn' and 'addFeatureBtn' are removed from HTML, so no need to reference them here.
 
-let houseModelSummaryDisplay; // NEW: Container for read-only summary
-let summaryRooms;             // NEW: Container for read-only rooms list
-let summaryFeatures;          // NEW: Container for read-only features list
+let houseModelDetailsSectionButtons; 
+let editModelDetailsBtn; 
 
-let currentHouseModelId = null; // To keep track of which house model's details are being edited
-let currentRoomsData = null;    // Cache the JSON string for rooms
-let currentFeaturesData = null; // Cache the JSON string for features
+let houseModelSummaryDisplay; 
+let summaryRooms;             
+let summaryFeatures;          
 
-// Helper for loading overlay (ensure these functions are available, typically from utils.js)
-function showLoading() {
-    document.getElementById('loadingOverlay').classList.remove('hidden');
-}
-function hideLoading() {
-    document.getElementById('loadingOverlay').classList.add('hidden');
-}
+let currentHouseModelId = null; 
+let currentRoomsJson = null;    
+let currentFeaturesJson = null; 
+
+// --- Predefined Lists ---
+// These are the master lists of rooms and features available for selection.
+const PREDEFINED_ROOMS = [
+    { name: "Kitchen" },
+    { name: "Living Room" },
+    { name: "Dining Room" },
+    { name: "Bedroom 1" },
+    { name: "Bedroom 2" },
+    { name: "Bedroom 3" },
+    { name: "Bedroom 4" },
+    { name: "Bathroom 1" },
+    { name: "Bathroom 2" },
+    { name: "En-suite" },
+    { name: "WC" },
+    { name: "Utility Room" },
+    { name: "Hallway" },
+    { name: "Landing" },
+    { name: "Garage" },
+    { name: "Study" },
+    { name: "Conservatory" },
+    { name: "Loft" }
+];
+
+const PREDEFINED_FEATURES = [
+    { name: "EV Charger" },
+    { name: "Turfed Garden" },
+    { name: "Fitted Wardrobes" },
+    { name: "Integrated Appliances" },
+    { name: "Underfloor Heating" },
+    { name: "Solar Panels" },
+    { name: "Downlights" },
+    { name: "Alarm System" },
+    { name: "Fireplace" },
+    { name: "South-facing Garden" },
+    { name: "Side Access" }
+];
 
 
-// DOMContentLoaded listener for this module to ensure elements exist
+// --- Module Initialization ---
 document.addEventListener("DOMContentLoaded", () => {
     // Retrieve DOM elements
     houseModelDetailsModal = document.getElementById('houseModelDetailsModal');
@@ -35,364 +68,174 @@ document.addEventListener("DOMContentLoaded", () => {
     featuresContainer = document.getElementById('featuresContainer');
     saveModelDetailsBtn = document.getElementById('saveModelDetailsBtn');
     cancelModelDetailsBtn = document.getElementById('cancelModelDetailsBtn');
+    // 'addRoomBtn' and 'addFeatureBtn' no longer exist in HTML
+
     houseModelDetailsSectionButtons = document.getElementById('houseModelDetailsSectionButtons');
     editModelDetailsBtn = document.getElementById('editModelDetailsBtn');
 
-    houseModelSummaryDisplay = document.getElementById('houseModelSummaryDisplay'); // NEW
-    summaryRooms = document.getElementById('summaryRooms');                       // NEW
-    summaryFeatures = document.getElementById('summaryFeatures');                 // NEW
-
-    console.log("house-model-details-logic.js: DOMContentLoaded fired. Initializing module elements and listeners.");
-
-    // Basic check for critical elements after retrieval
-    if (!houseModelDetailsModal || !closeModelDetailsModalBtn || !roomsContainer || !featuresContainer || 
-        !saveModelDetailsBtn || !cancelModelDetailsBtn || !houseModelDetailsSectionButtons || !editModelDetailsBtn ||
-        !houseModelSummaryDisplay || !summaryRooms || !summaryFeatures) { // Added new elements to check
-        
-        let missingElements = [];
-        if (!houseModelDetailsModal) missingElements.push('houseModelDetailsModal');
-        if (!closeModelDetailsModalBtn) missingElements.push('closeModelDetailsModalBtn');
-        if (!roomsContainer) missingElements.push('roomsContainer');
-        if (!featuresContainer) missingElements.push('featuresContainer');
-        if (!saveModelDetailsBtn) missingElements.push('saveModelDetailsBtn');
-        if (!cancelModelDetailsBtn) missingElements.push('cancelModelDetailsBtn');
-        if (!houseModelDetailsSectionButtons) missingElements.push('houseModelDetailsSectionButtons');
-        if (!editModelDetailsBtn) missingElements.push('editModelDetailsBtn');
-        if (!houseModelSummaryDisplay) missingElements.push('houseModelSummaryDisplay');
-        if (!summaryRooms) missingElements.push('summaryRooms');
-        if (!summaryFeatures) missingElements.push('summaryFeatures');
-        
-        console.error("house-model-details-logic.js: One or more critical DOM elements are missing:", missingElements.join(', '));
-        return; 
-    }
-    console.log("house-model-details-logic.js: All critical DOM elements found.");
+    houseModelSummaryDisplay = document.getElementById('houseModelSummaryDisplay');
+    summaryRooms = document.getElementById('summaryRooms');
+    summaryFeatures = document.getElementById('summaryFeatures');
 
     // Attach event listeners for the modal
     if (closeModelDetailsModalBtn) {
         closeModelDetailsModalBtn.addEventListener('click', hideModal);
     }
     if (cancelModelDetailsBtn) {
-        cancelModelDetailsBtn.addEventListener('click', hideModal); // Cancel button also hides modal
+        cancelModelDetailsBtn.addEventListener('click', hideModal);
     }
     if (saveModelDetailsBtn) {
-        saveModelDetailsBtn.addEventListener('click', saveModelDetails);
+        saveModelDetailsBtn.addEventListener('click', saveHouseModelDetails);
     }
-
-    // Attach event listener for the "Edit Details" button on the main form
     if (editModelDetailsBtn) {
         editModelDetailsBtn.addEventListener('click', () => {
-            console.log("house-model-details-logic.js: 'Edit Details' button clicked.");
-            // When this button is clicked, open the modal with the cached data.
-            if (currentHouseModelId !== null) {
-                _openHouseModelDetailsModal(currentHouseModelId, currentRoomsData, currentFeaturesData);
-            } else {
-                alert("Please select a House Model first to edit its details.");
-            }
+            _openHouseModelDetailsModal(currentHouseModelId, currentRoomsJson, currentFeaturesJson);
         });
     }
 
-    // Add listeners for "Add Room" and "Add Feature" buttons inside the modal
-    const addRoomBtn = document.getElementById('addRoomBtn');
-    const addFeatureBtn = document.getElementById('addFeatureBtn');
-
-    if (addRoomBtn) addRoomBtn.addEventListener('click', addNewRoom);
-    if (addFeatureBtn) addFeatureBtn.addEventListener('click', addNewFeature);
+    console.log('house-model-details-logic.js: DOMContentLoaded fired. Initializing module elements and listeners.');
+    if (houseModelDetailsModal && roomsContainer && featuresContainer && saveModelDetailsBtn && editModelDetailsBtn && houseModelSummaryDisplay) {
+        console.log('house-model-details-logic.js: All critical DOM elements for house model details found.');
+    } else {
+        console.warn('house-model-details-logic.js: Some critical DOM elements for house model details were not found. Check form.html and IDs.');
+    }
 });
 
-/**
- * Shows or hides the "Edit Details" button and the read-only summary on the main form.
- * This function DOES NOT open the modal.
- * @param {number|null} modelId The ID of the house model, or null if no model is selected.
- * @param {string|null} roomsJson JSON string of rooms data, or null.
- * @param {string|null} featuresJson JSON string of features data, or null.
- */
-export function showHouseModelSummaryAndButton(modelId, roomsJson, featuresJson) {
-    console.log("house-model-details-logic.js: showHouseModelSummaryAndButton called.");
-    console.log("  modelId:", modelId, "roomsJson (received):", roomsJson, "featuresJson (received):", featuresJson);
 
-    // Cache the data so the modal can access it when opened
-    currentHouseModelId = modelId;
-    currentRoomsData = roomsJson;
-    currentFeaturesData = featuresJson;
-
-    // Clear previous summary content
-    if (summaryRooms) summaryRooms.innerHTML = '';
-    if (summaryFeatures) summaryFeatures.innerHTML = '';
-
-    if (modelId) {
-        // A model is selected, show the section, the button, and populate summary
-        if (houseModelDetailsSectionButtons) houseModelDetailsSectionButtons.classList.remove('hidden');
-        if (editModelDetailsBtn) editModelDetailsBtn.classList.remove('hidden');
-        if (houseModelSummaryDisplay) houseModelSummaryDisplay.classList.remove('hidden');
-
-        // Populate summary
-        if (roomsJson) {
-            try {
-                const rooms = JSON.parse(roomsJson);
-                if (rooms.length > 0) {
-                    summaryRooms.innerHTML = '<h4>Rooms:</h4><ul>' + 
-                        rooms.filter(r => r.has_room || r.name).map(room => 
-                            `<li>${room.name}${room.has_room && room.size ? ` (${room.size})` : ''}${room.has_room ? '' : ' (Not Included)'}</li>`
-                        ).join('') + '</ul>';
-                } else {
-                    summaryRooms.innerHTML = '<p>No room details available.</p>';
-                }
-            } catch (e) {
-                console.error("house-model-details-logic.js: Error parsing roomsJson for summary:", e);
-                summaryRooms.innerHTML = '<p>Error loading room details.</p>';
-            }
-        } else {
-            summaryRooms.innerHTML = '<p>No room details available.</p>';
-        }
-
-        if (featuresJson) {
-            try {
-                const features = JSON.parse(featuresJson);
-                if (features.length > 0) {
-                    summaryFeatures.innerHTML = '<h4>Features:</h4><ul>' + 
-                        features.filter(f => f.has_feature || f.name).map(feature => 
-                            `<li>${feature.name}${feature.has_feature ? '' : ' (Not Included)'}</li>`
-                        ).join('') + '</ul>';
-                } else {
-                    summaryFeatures.innerHTML = '<p>No feature details available.</p>';
-                }
-            } catch (e) {
-                console.error("house-model-details-logic.js: Error parsing featuresJson for summary:", e);
-                summaryFeatures.innerHTML = '<p>Error loading feature details.</p>';
-            }
-        } else {
-            summaryFeatures.innerHTML = '<p>No feature details available.</p>';
-        }
-
-    } else {
-        // No model selected, hide the section, the button, and the summary
-        if (houseModelDetailsSectionButtons) houseModelDetailsSectionButtons.classList.add('hidden');
-        if (editModelDetailsBtn) editModelDetailsBtn.classList.add('hidden');
-        if (houseModelSummaryDisplay) houseModelSummaryDisplay.classList.add('hidden');
-        summaryRooms.innerHTML = '';
-        summaryFeatures.innerHTML = '';
-    }
-}
+// --- Private Helper Functions ---
 
 /**
- * INTERNAL: Opens the house model details modal and populates it with data for editing.
- * This function is called by the 'Edit Details' button click or when adding a new house model.
- * NOT EXPORTED.
- * @param {number|null} modelId The ID of the house model, or null if adding a new one.
- * @param {string|null} roomsJson JSON string of rooms data, or null.
- * @param {string|null} featuresJson JSON string of features data, or null.
+ * Opens the house model details modal and populates it with predefined lists.
+ * @param {number|null} modelId The ID of the house model, or null for a new model being defined.
+ * @param {string|null} roomsJson JSON string of existing rooms data, or null.
+ * @param {string|null} featuresJson JSON string of existing features data, or null.
+ * @private
  */
 function _openHouseModelDetailsModal(modelId, roomsJson, featuresJson) {
-    console.log("house-model-details-logic.js: _openHouseModelDetailsModal called. Populating modal.");
-    console.log("  modelId:", modelId, "roomsJson:", roomsJson, "featuresJson:", featuresJson);
+    currentHouseModelId = modelId; 
+    roomsContainer.innerHTML = ''; // Clear previous inputs
+    featuresContainer.innerHTML = ''; // Clear previous inputs
 
-    currentHouseModelId = modelId; // Ensure this is set for saving within the modal
+    let existingRooms = [];
+    let existingFeatures = [];
 
-    // Clear previous content in the modal
-    if (roomsContainer) roomsContainer.innerHTML = '';
-    if (featuresContainer) featuresContainer.innerHTML = '';
-
-    // Parse and populate rooms in the modal
-    if (roomsJson) {
-        try {
-            const rooms = JSON.parse(roomsJson);
-            console.log("house-model-details-logic.js: Parsed rooms for modal:", rooms);
-            rooms.forEach(room => addRoomField(room.name, room.has_room, room.size));
-        } catch (e) {
-            console.error("house-model-details-logic.js: Error parsing roomsJson for modal:", e);
-            alert("Error loading rooms data for modal: Invalid format.");
-        }
-    } else {
-        console.log("house-model-details-logic.js: No roomsJson for modal.");
+    try {
+        if (roomsJson) existingRooms = JSON.parse(roomsJson);
+        if (featuresJson) existingFeatures = JSON.parse(featuresJson);
+    } catch (e) {
+        console.error('house-model-details-logic.js: Error parsing existing rooms/features JSON:', e);
+        // Fallback to empty arrays if parsing fails
+        existingRooms = [];
+        existingFeatures = [];
     }
 
-    // Parse and populate features in the modal
-    if (featuresJson) {
-        try {
-            const features = JSON.parse(featuresJson);
-            console.log("house-model-details-logic.js: Parsed features for modal:", features);
-            features.forEach(feature => addFeatureField(feature.name, feature.has_feature));
-        } catch (e) {
-            console.error("house-model-details-logic.js: Error parsing featuresJson for modal:", e);
-            alert("Error loading features data for modal: Invalid format.");
-        }
-    } else {
-        console.log("house-model-details-logic.js: No featuresJson for modal.");
-    }
+    // Populate rooms container with predefined rooms and their saved states
+    PREDEFINED_ROOMS.forEach(predefinedRoom => {
+        const existingRoom = existingRooms.find(r => r.name === predefinedRoom.name);
+        const hasRoom = existingRoom ? (existingRoom.has_room === 1) : false;
+        const roomSize = existingRoom ? (existingRoom.size || '') : ''; // Ensure size is not null/undefined
+
+        const roomDiv = document.createElement('div');
+        roomDiv.className = 'grid-item room-item'; // Add a class for styling individual items
+        roomDiv.innerHTML = `
+            <label class="checkbox-container room-checkbox-label">
+                <input type="checkbox" data-room-name="${predefinedRoom.name}" ${hasRoom ? 'checked' : ''} class="room-has-checkbox">
+                <span class="checkmark"></span> ${predefinedRoom.name}
+            </label>
+            <input type="text" value="${roomSize}" placeholder="Size (e.g., 10x12ft)" 
+                   class="room-size-input ${hasRoom ? '' : 'hidden'}">
+        `;
+        roomsContainer.appendChild(roomDiv);
+
+        // Add event listener to toggle size input visibility
+        const checkbox = roomDiv.querySelector('.room-has-checkbox');
+        const sizeInput = roomDiv.querySelector('.room-size-input');
+        checkbox.addEventListener('change', () => {
+            if (checkbox.checked) {
+                sizeInput.classList.remove('hidden');
+            } else {
+                sizeInput.classList.add('hidden');
+                sizeInput.value = ''; // Clear size when unchecked
+            }
+        });
+    });
+
+    // Populate features container with predefined features and their saved states
+    PREDEFINED_FEATURES.forEach(predefinedFeature => {
+        const existingFeature = existingFeatures.find(f => f.name === predefinedFeature.name);
+        const hasFeature = existingFeature ? (existingFeature.has_feature === 1) : false;
+
+        const featureDiv = document.createElement('div');
+        featureDiv.className = 'grid-item feature-item'; // Add a class for styling individual items
+        featureDiv.innerHTML = `
+            <label class="checkbox-container feature-checkbox-label">
+                <input type="checkbox" data-feature-name="${predefinedFeature.name}" ${hasFeature ? 'checked' : ''} class="feature-has-checkbox">
+                <span class="checkmark"></span> ${predefinedFeature.name}
+            </label>
+        `;
+        featuresContainer.appendChild(featureDiv);
+    });
 
     // Show the modal
-    if (houseModelDetailsModal) {
-        houseModelDetailsModal.classList.remove('hidden');
-    }
+    houseModelDetailsModal.classList.remove('hidden');
 }
 
 /**
  * Hides the house model details modal.
  */
 function hideModal() {
-    if (houseModelDetailsModal) {
-        houseModelDetailsModal.classList.add('hidden');
-    }
-    // Clear content of modal after hiding to ensure fresh load next time
-    if (roomsContainer) roomsContainer.innerHTML = '';
-    if (featuresContainer) featuresContainer.innerHTML = '';
+    houseModelDetailsModal.classList.add('hidden');
 }
 
 /**
- * Adds a room input field to the rooms container.
- * @param {string} name The initial name of the room.
- * @param {number} initialHasRoom 1 if the room is present, 0 otherwise.
- * @param {string} initialSize The initial size of the room.
- */
-function addRoomField(name = '', initialHasRoom = 0, initialSize = '') {
-    if (!roomsContainer) return;
-
-    const roomDiv = document.createElement('div');
-    roomDiv.className = 'room-item';
-    roomDiv.innerHTML = `
-        <input type="text" value="${name}" placeholder="Room Name" class="input-field room-name-input">
-        <input type="text" value="${initialSize}" placeholder="Size (e.g., 10x12ft)" class="input-field room-size-input">
-        <label class="flex items-center gap-2">
-            <input type="checkbox" ${initialHasRoom ? 'checked' : ''} class="room-has-checkbox"> Has Room
-        </label>
-        <button type="button" class="remove-room-btn">X</button>
-    `;
-
-    const hasRoomCheckbox = roomDiv.querySelector('.room-has-checkbox');
-    const sizeInput = roomDiv.querySelector('.room-size-input');
-    const removeBtn = roomDiv.querySelector('.remove-room-btn');
-
-    // Initial state of size input based on checkbox
-    if (!initialHasRoom) {
-        sizeInput.style.display = 'none'; // Initially hide if not checked
-        sizeInput.disabled = true;
-    } else {
-        sizeInput.style.display = ''; // Ensure visible if checked
-        sizeInput.disabled = false;
-    }
-    
-    // Add event listener to toggle size input visibility and disabled state
-    hasRoomCheckbox.addEventListener('change', () => {
-        if (hasRoomCheckbox.checked) {
-            sizeInput.style.display = ''; // Show
-            sizeInput.disabled = false;
-            sizeInput.focus(); // Focus when enabled
-        } else {
-            sizeInput.style.display = 'none'; // Hide
-            sizeInput.disabled = true;
-            sizeInput.value = ''; // Clear value when hidden
-        }
-    });
-
-    removeBtn.addEventListener('click', () => roomDiv.remove());
-
-    roomsContainer.appendChild(roomDiv);
-}
-
-/**
- * Adds a feature input field to the features container.
- * @param {string} name The initial name of the feature.
- * @param {number} initialHasFeature 1 if the feature is present, 0 otherwise.
- */
-function addFeatureField(name = '', initialHasFeature = 0) {
-    if (!featuresContainer) return;
-
-    const featureDiv = document.createElement('div');
-    featureDiv.className = 'feature-item';
-    featureDiv.innerHTML = `
-        <input type="text" value="${name}" placeholder="Feature Name" class="input-field feature-name-input">
-        <label class="flex items-center gap-2">
-            <input type="checkbox" ${initialHasFeature ? 'checked' : ''} class="feature-has-checkbox"> Has Feature
-        </label>
-        <button type="button" class="remove-feature-btn">X</button>
-    `;
-
-    const removeBtn = featureDiv.querySelector('.remove-feature-btn');
-    removeBtn.addEventListener('click', () => featureDiv.remove());
-
-    featuresContainer.appendChild(featureDiv);
-}
-
-// Function to add new empty room/feature fields
-export function addNewRoom() {
-    addRoomField(); // Call with default empty values
-}
-
-export function addNewFeature() {
-    addFeatureField(); // Call with default empty values
-}
-
-
-/**
- * Gathers all room and feature data from the modal.
- * @returns {object} An object containing arrays of rooms and features.
- * IMPORTANT: This function is EXPORTED because house-model-logic.js needs it
- * when saving a new house model, and the modal's save button also uses it.
+ * Gathers room and feature data from the modal's checkboxes and inputs.
+ * @returns {object} An object containing rooms and features arrays, filtered by selected items.
+ * @public
  */
 export function getHouseModelDetailsData() {
     const rooms = [];
-    roomsContainer.querySelectorAll('.room-item').forEach(roomDiv => {
-        const nameInput = roomDiv.querySelector('.room-name-input');
-        const hasCheckbox = roomDiv.querySelector('.room-has-checkbox');
-        const sizeInput = roomDiv.querySelector('.room-size-input'); // Get the size input
+    roomsContainer.querySelectorAll('.room-item').forEach(roomItemDiv => {
+        const checkbox = roomItemDiv.querySelector('.room-has-checkbox');
+        const sizeInput = roomItemDiv.querySelector('.room-size-input');
 
-        rooms.push({
-            name: nameInput ? nameInput.value.trim() : '',
-            has_room: hasCheckbox ? (hasCheckbox.checked ? 1 : 0) : 0,
-            size: sizeInput && hasCheckbox.checked ? sizeInput.value.trim() : '' // Only include size if 'has room' is checked
-        });
+        if (checkbox && checkbox.checked) {
+            const name = checkbox.dataset.roomName;
+            const size = sizeInput ? sizeInput.value.trim() : '';
+            rooms.push({ name, size, has_room: 1 });
+        }
     });
 
     const features = [];
-    featuresContainer.querySelectorAll('.feature-item').forEach(featureDiv => {
-        const nameInput = featureDiv.querySelector('.feature-name-input');
-        const hasCheckbox = featureDiv.querySelector('.feature-has-checkbox');
-        features.push({
-            name: nameInput ? nameInput.value.trim() : '',
-            has_feature: hasCheckbox ? (hasCheckbox.checked ? 1 : 0) : 0
-        });
+    featuresContainer.querySelectorAll('.feature-item').forEach(featureItemDiv => {
+        const checkbox = featureItemDiv.querySelector('.feature-has-checkbox');
+        
+        if (checkbox && checkbox.checked) {
+            const name = checkbox.dataset.featureName;
+            features.push({ name, has_feature: 1 });
+        }
     });
-
-    console.log("house-model-details-logic.js: getHouseModelDetailsData - Rooms:", rooms);
-    console.log("house-model-details-logic.js: getHouseModelDetailsData - Features:", features);
 
     return { rooms, features };
 }
 
+
 /**
- * Handles saving the house model details (triggered by the modal's Save button).
- * This will call the main process to update the house_models table.
+ * Saves the house model details (rooms and features) to the database via IPC.
+ * This function is called when the "Save Details" button in the modal is clicked.
+ * @private
  */
-async function saveModelDetails() {
+async function saveHouseModelDetails() {
     if (currentHouseModelId === null) {
-        alert("Cannot save details: No house model selected. This usually happens if you try to save a brand new model without saving its name first.");
+        alert('Cannot save details for an undefined house model. Please select or create a house model first.');
         return;
     }
 
     const { rooms, features } = getHouseModelDetailsData();
-
-    // Basic validation for rooms/features
-    if (rooms.length === 0 && features.length === 0) {
-        if (!confirm("No rooms or features entered. Do you want to save with empty details?")) {
-            return;
-        }
-    }
-
-    // Ensure at least one room/feature has a name if present
-    const hasNamedRoom = rooms.some(room => room.name !== '');
-    const hasNamedFeature = features.some(feature => feature.name !== '');
-
-    if (!hasNamedRoom && !hasNamedFeature && (rooms.length > 0 || features.length > 0)) {
-        if (!confirm("Some rooms or features have no names. Save anyway?")) {
-            return;
-        }
-    }
+    const roomsJson = JSON.stringify(rooms);
+    const featuresJson = JSON.stringify(features);
 
     showLoading();
     try {
-        const roomsJson = JSON.stringify(rooms);
-        const featuresJson = JSON.stringify(features);
-
         console.log("house-model-details-logic.js: Saving details for model ID:", currentHouseModelId);
         console.log("  Rooms JSON:", roomsJson);
         console.log("  Features JSON:", featuresJson);
@@ -403,12 +246,12 @@ async function saveModelDetails() {
 
         if (response.success) {
             alert(response.message);
-            hideModal(); // Close modal on successful save
-            // After saving, ensure the cached data for this model is updated
-            // and the summary display is also updated.
-            currentRoomsData = roomsJson;
-            currentFeaturesData = featuresJson;
-            showHouseModelSummaryAndButton(currentHouseModelId, currentRoomsData, currentFeaturesData);
+            hideModal(); 
+            
+            // After saving, update the cached data and refresh the summary display
+            currentRoomsJson = roomsJson; 
+            currentFeaturesJson = featuresJson; 
+            showHouseModelSummaryAndButton(currentHouseModelId, currentRoomsJson, currentFeaturesJson);
         } else {
             alert(`Failed to save details: ${response.message}`);
         }
@@ -420,9 +263,80 @@ async function saveModelDetails() {
     }
 }
 
-// This function will be called by house-model-logic.js to specifically open the modal for
-// a brand new house model (no existing data).
-export function openNewHouseModelModalForDefinition() {
-    // When defining a new model, we don't have a modelId yet, and rooms/features are empty.
-    _openHouseModelDetailsModal(null, null, null);
+
+// --- Public Functions ---
+
+/**
+ * Displays the house model summary on the main form and shows/hides the edit button.
+ * This function should be called whenever the selected house model changes or its details are saved.
+ * @param {number|null} modelId The ID of the selected house model.
+ * @param {string|null} roomsJson The JSON string of rooms for the model.
+ * @param {string|null} featuresJson The JSON string of features for the model.
+ * @public
+ */
+export function showHouseModelSummaryAndButton(modelId, roomsJson, featuresJson) {
+    console.log('house-model-details-logic.js: showHouseModelSummaryAndButton called.');
+    console.log(`  modelId: ${modelId}, roomsJson (received): ${roomsJson}, featuresJson (received): ${featuresJson}`);
+
+    // Update current cached data for modal opening later
+    currentHouseModelId = modelId;
+    currentRoomsJson = roomsJson;
+    currentFeaturesJson = featuresJson;
+
+    if (modelId && roomsJson && featuresJson) {
+        let rooms = [];
+        let features = [];
+        try {
+            rooms = JSON.parse(roomsJson);
+            features = JSON.parse(featuresJson);
+        } catch (e) {
+            console.error('Error parsing rooms/features JSON for summary display:', e);
+            rooms = [];
+            features = [];
+        }
+
+        // Display summary of rooms (only selected ones)
+        const selectedRooms = rooms.filter(r => r.has_room);
+        if (selectedRooms.length > 0) {
+            summaryRooms.innerHTML = '<strong>Rooms:</strong> ' + selectedRooms
+                .map(r => `${r.name}` + (r.size ? ` (${r.size})` : ''))
+                .join(', ');
+        } else {
+            summaryRooms.innerHTML = '<strong>Rooms:</strong> No specific room details selected.';
+        }
+
+        // Display summary of features (only selected ones)
+        const selectedFeatures = features.filter(f => f.has_feature);
+        if (selectedFeatures.length > 0) {
+            summaryFeatures.innerHTML = '<strong>Features:</strong> ' + selectedFeatures
+                .map(f => f.name)
+                .join(', ');
+        } else {
+            summaryFeatures.innerHTML = '<strong>Features:</strong> No specific feature details selected.';
+        }
+
+        houseModelSummaryDisplay.classList.remove('hidden'); 
+        houseModelDetailsSectionButtons.classList.remove('hidden'); 
+    } else {
+        // Hide summary and button if no model is selected or details are not available
+        houseModelSummaryDisplay.classList.add('hidden');
+        houseModelDetailsSectionButtons.classList.add('hidden');
+        summaryRooms.innerHTML = ''; 
+        summaryFeatures.innerHTML = ''; 
+    }
+}
+
+/**
+ * Specifically opens the house model details modal for a BRAND NEW house model,
+ * where details need to be defined for the first time.
+ * @public
+ */
+export function openNewHouseModelModalForDefinition(newModelId) {
+    // When defining a new model, rooms/features are empty. We just need the ID to save against.
+    if (newModelId) {
+        currentHouseModelId = newModelId; 
+        _openHouseModelDetailsModal(newModelId, null, null); // Open with empty data, which populates all predefined options
+    } else {
+        alert('Error: Cannot open details for a new model without an ID.');
+    }
 }
